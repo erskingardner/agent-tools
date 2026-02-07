@@ -1,0 +1,41 @@
+# OS files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editor / IDE
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Node / Bun (for npx/mcp tools)
+node_modules/
+package-lock.json
+yarn.lock
+bun.lock
+bun.lockb
+.npm
+.yarn/
+.bun/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak

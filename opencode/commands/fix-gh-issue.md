@@ -32,7 +32,7 @@ Verify an issue from GitHub is valid, create a worktree to work on it, fix the i
 ### 4. Fix the Issue
 
 - Implement the fix or feature
-- Run quality checks: `just ci`
+- Run quality checks: `just precommit` or `just ci`
 - Check code coverage: `just coverage-text`
   - All quality checks must pass
   - Code coverage must be equal or greater than HEAD
@@ -44,7 +44,13 @@ Verify an issue from GitHub is valid, create a worktree to work on it, fix the i
 - Create a PR: `gh pr create --fill`
 - Include `Closes #<ISSUE_NUMBER>` in the PR body
 
-### 6. Report
+### 7. Run code-review
+
+- Once you've published a PR, start a new session with the /new command
+- Then run the /code-review command to do a full code review.
+- If any issues are surfaced, fix them, run all code quality checks again, and then commit and push your changes
+
+### 7. Report
 
 After successful PR creation, provide this report:
 
@@ -62,3 +68,4 @@ After successful PR creation, provide this report:
 📝 Summary:
    <Summary of changes made>
 ```
+
