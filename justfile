@@ -1,9 +1,6 @@
-# Agent tools helper commands
+# Symlink repo skills into Claude, Cursor, Codex, and OpenCode
+sync-skills:
+    ./scripts/sync-skills.sh
 
-# Sync OpenCode configuration to ~/.config/opencode
-sync-opencode:
-    ./scripts/sync-opencode-config.sh
-
-# Sync OpenCode configuration, removing files not in source
-sync-opencode-clean:
-    ./scripts/sync-opencode-config.sh --delete
+# Alias
+sync: sync-skills
