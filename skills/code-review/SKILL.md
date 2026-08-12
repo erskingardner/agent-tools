@@ -4,7 +4,7 @@ description: >-
   Review a GitHub pull request and post findings directly on the PR. Use when
   the user asks for a code review, PR review, or to review a pull request.
   PR-only — does not review local worktrees or branches.
-model: sonnet
+model: opus
 context: fork
 user-invocable: true
 ---
@@ -19,7 +19,31 @@ $ARGUMENTS
 
 **PR only.** Require a PR reference (`#123`, `123`, or a PR URL). If none is given, ask for one — do not fall back to local diffs or branch reviews.
 
-Use `gh pr view <number>` / `gh pr diff <number>` for metadata and the diff. Do NOT use a git worktree or checkout. DON'T EVER CHANGE THE USER'S WORKSPACE OR THEIR CURRENT BRANCH.
+Use `gh pr view <reference>` / `gh pr diff <reference>` for metadata and the
+diff. Prefer a full PR URL so the review does not depend on the current
+directory. Use `gh api` with the PR's repository and exact head SHA when more
+source context is needed.
+
+## Workspace ownership and safety
+
+Treat every existing worktree, checkout, and branch as user-owned development
+state, including the directory where the review agent was launched.
+
+- Do not create a worktree, clone, branch, checkout, or local PR ref.
+- Do not switch branches or change `HEAD`.
+- Do not edit, format, generate, stash, commit, reset, clean, prune, remove, or
+  otherwise mutate local repository state.
+- Do not remove the current worktree or any other worktree, even if it appears
+  detached, clean, stale, temporary, or review-only. Its lifecycle belongs to
+  the tool or user that created it.
+- Review the remote PR at its exact head SHA. Read additional files through
+  GitHub rather than checking out the head locally.
+- Use existing remote CI results for executable validation. If the review
+  cannot be completed without new local execution, state the validation gap;
+  do not create a checkout to fill it.
+
+The review agent owns only its GitHub review comments. It has no workspace or
+branch cleanup responsibility.
 
 ## Review Process
 
@@ -28,7 +52,9 @@ Use `gh pr view <number>` / `gh pr diff <number>` for metadata and the diff. Do 
 1. Load PR metadata: title, body, labels, linked issues, base/head.
 2. Find and thoroughly read every linked issue and linked/referenced PR (closing keywords, "Related to", "Depends on", cross-links in the body and comments).
 3. Understand the problem being solved, prior art, and any constraints from that context.
-4. Only then fetch and review the PR diff.
+4. Record the exact PR head SHA, then fetch the diff through GitHub.
+5. Before posting, confirm the PR still has that head SHA. If it changed,
+   review the new diff rather than posting stale findings.
 
 ### 2. Question the need
 
