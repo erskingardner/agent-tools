@@ -90,6 +90,39 @@ Other standards:
 
 **Do not** create review markdown under `reviews/` or anywhere in the workspace.
 
+### Required review header
+
+The overall PR review body must begin with this Markdown table, before any
+heading, greeting, summary, or other prose:
+
+```markdown
+| Review metadata | Value |
+| --- | --- |
+| Reviewed at (UTC) | `2026-08-27T12:34:56Z` |
+| Commit reviewed | `0123456789abcdef0123456789abcdef01234567` |
+| Model | `exact-runtime-model-id` |
+| Reasoning level | `exact-runtime-reasoning-level` |
+| Recommended action | **Merge** |
+```
+
+Populate it at posting time:
+
+- **Reviewed at (UTC):** the current UTC time in ISO 8601 format.
+- **Commit reviewed:** the complete PR head SHA returned by GitHub, not a
+  shortened hash. This must be the same SHA rechecked immediately before
+  posting.
+- **Model:** the exact executing model identifier exposed by the runtime.
+- **Reasoning level:** the exact reasoning/effort setting exposed by the
+  runtime. Do not infer either runtime field from the skill's requested model,
+  defaults, or model family. If the runtime does not expose a value, write
+  `Not exposed by runtime` rather than guessing or omitting the row.
+- **Recommended action:** use **Merge** with `--approve`, **Fix blocking issues
+  before merge** with `--request-changes`, or **Resolve serious concerns before
+  merge** with `--comment`.
+
+This table is mandatory for every overall review event. Do not repeat it in
+individual inline comments.
+
 Post findings on the PR with `gh`:
 
 1. **Inline comments** for specific lines when possible (`gh api` pull request review comments, or equivalent `gh` review APIs).
