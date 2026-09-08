@@ -27,7 +27,9 @@ Copy this checklist and track it:
 - [ ] 2. Validate it still exists in the codebase
 - [ ] 3. Ask whether this is a symptom of a deeper root cause
 - [ ] 4a. If yes: stop, investigate related open issues, discuss with the user
-- [ ] 4b. If no: fix with TDD, then open a draft PR
+- [ ] 4b. If no: fix with TDD
+- [ ] 5. Open a draft PR
+- [ ] 6. Self-review the draft PR
 ```
 
 
@@ -97,6 +99,8 @@ When the failing-then-passing tests are in place and the fix is committed:
 2. Create a **draft** PR with `gh pr create --draft`.
 3. Link the issue (`Fixes #<number>`).
 4. Return the draft PR URL.
+5. Immediately run [self-review](../self-review/SKILL.md) on that PR URL. Do
+   not stop at the PR link.
 
 Use this body shape:
 
@@ -110,7 +114,18 @@ Use this body shape:
 - [ ] <any extra verification>
 ```
 
+### 6. Self-review the draft PR
 
+**Read and apply** [self-review](../self-review/SKILL.md) with the draft PR
+URL. That skill launches the other two reviewers, reaps them, and does one
+address pass. Do not review the PR yourself. Do not skip this step because
+the PR is still a draft.
+
+If the address pass changes code, keep TDD: re-run the new test and the
+relevant suite, and do not push a red suite.
+
+Leave the PR as a **draft**. Do not mark it ready for review unless the user
+asks.
 
 ## Hard stops
 

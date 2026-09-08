@@ -18,6 +18,7 @@ TARGETS=(
   "cursor:$HOME/.cursor/skills"
   "codex:$HOME/.codex/skills"
   "opencode:$HOME/.config/opencode/skills"
+  "pi:$HOME/.pi/agent/skills"
 )
 
 if [[ ! -d "$SKILLS_SRC" ]]; then
