@@ -120,6 +120,53 @@ Populate it at posting time:
   before merge** with `--request-changes`, or **Resolve serious concerns before
   merge** with `--comment`.
 
+#### Resolve runtime metadata
+
+Resolve each field independently, immediately before posting. Prefer metadata
+that the current harness supplied directly. Otherwise, inspect session data
+only when an exact current session ID or transcript path supplied by the
+harness identifies it unambiguously.
+
+Never select the newest session, match a session only by working directory or
+modification time, or report a configured default, requested model, alias,
+skill frontmatter value, or model family as the executing value. Concurrent
+sessions, mid-session changes, fallbacks, and subagents make those guesses
+unsafe. If an authoritative path below is unavailable, use
+`Not exposed by runtime` for that field.
+
+- **Codex:** if `CODEX_THREAD_ID` or `CODEX_SESSION_ID` is present, require a
+  unique rollout file whose filename contains that complete ID under
+  `${CODEX_HOME:-$HOME/.codex}/sessions`. Read the last `turn_context` for the
+  current turn: use `.payload.model` for **Model** and `.payload.effort` for
+  **Reasoning level**. Do not fall back to `config.toml` or the most recently
+  modified rollout.
+- **OpenCode:** use the exact `provider/model` identifier injected into the
+  current system context for **Model**. Use the current session's `variant` for
+  **Reasoning level** only when the host or wrapper supplied that session
+  metadata directly; the normal model context does not expose it. Do not guess
+  an OpenCode session to export.
+- **Cursor:** in the Cursor Mac app, use the exact model identity explicitly
+  injected into the current system context (for example, `Cursor Grok 4.6`). In
+  CLI/host-stream mode, use `system/init.model` when that current event was
+  supplied to the agent. Preserve either value exactly as a runtime identity or
+  display name; do not upgrade it to an assumed provider model ID. Cursor does
+  not currently expose a reliable reasoning-level field to the agent, so use
+  the fallback unless the current host explicitly supplies one.
+- **Pi:** when the current host or wrapper supplies RPC `get_state`, use
+  `data.model.provider` plus `data.model.id` for **Model** and
+  `data.thinkingLevel` for **Reasoning level**. An exact `sessionFile` or
+  `sessionId` supplied by Pi may instead be used to resolve the active branch's
+  latest `model_change` and `thinking_level_change` entries. A skill running
+  inside normal interactive Pi cannot issue `get_state` to its parent process;
+  without a bridge or exact session identity, use the fallback.
+- **Claude Code:** when the current status-line/session payload is supplied to
+  the agent, use `model.id` and `effort.level`. In stream/SDK mode,
+  `system/init.model` is authoritative for **Model**, but it does not include
+  effort. Status-line data is sent to the configured status-line command, not
+  automatically to the model, so without host injection use the fallback for
+  any missing field. Do not infer from `--model`, `--effort`, environment
+  variables, settings, or this skill's frontmatter.
+
 This table is mandatory for every overall review event. Do not repeat it in
 individual inline comments.
 
