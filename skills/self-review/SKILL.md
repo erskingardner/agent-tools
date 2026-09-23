@@ -3,7 +3,8 @@ name: self-review
 description: >-
   Dispatch the other two review agents to review the current PR, reap those
   sessions when they finish, then do one pass addressing their findings. The
-  three seats are Codex, latest Claude Opus, and latest Cursor Grok Fast. Use
+  three seats are Codex GPT-6 Sol, Claude Opus 5.5, and latest Cursor Grok
+  Fast. Use
   when the user asks for a self-review, to get the other agents to review, or
   to have the other two review a PR after the current agent finished building.
 user-invocable: true
@@ -14,8 +15,8 @@ user-invocable: true
 You are the builder. Do not review this PR yourself. Identify which of the
 three seats you are, then launch the other two as reviewers via CLI.
 
-Never pin a model version in the launch command. Resolve families at launch
-time so this skill stays current when Opus or Grok ship a new generation.
+Pin Claude to Opus 5.5 and Codex to GPT-6 Sol. Resolve the Grok family at
+launch time so that seat stays current when Grok ships a new generation.
 
 Do **one** review → reap → address loop, then stop. Do not dispatch a second
 round of reviewers.
@@ -24,9 +25,9 @@ round of reviewers.
 
 | Seat | How to pick the model |
 | --- | --- |
-| Codex | `codex exec` with Codex's configured default |
-| Claude Opus | `claude --model opus` (Claude's latest-Opus alias) |
-| Cursor Grok Fast | latest `cursor-grok-*-high-fast` from `cursor-agent --list-models` |
+| Codex | `codex exec --model gpt-6-sol` |
+| Claude Opus 5.5 | `claude --model claude-opus-5-5` |
+| Cursor Grok Fast | newest `grok-*-high-fast` from `cursor-agent --list-models` (older ids are `cursor-grok-*-high-fast`) |
 
 - If you are **Codex** → launch Claude + Cursor
 - If you are **Cursor** → launch Claude + Codex
@@ -80,19 +81,19 @@ Use this prompt for both:
 Use the code-review skill to review <PR_URL>
 ```
 
-### Claude Opus
+### Claude Opus 5.5
 
 Use print-and-exit (`-p`), not `--bg`. `--bg` leaves a session running after
 the review is posted.
 
 ```bash
-claude -p --dangerously-skip-permissions --model opus --effort high \
+claude -p --dangerously-skip-permissions --model claude-opus-5-5 --effort high \
   "Use the code-review skill to review <PR_URL>" \
   >"$LOG_DIR/claude.log" 2>&1
 ```
 
-`opus` is Claude's alias for whatever the current Opus generation is. Do not
-pass `claude-opus-5` or any other versioned id.
+Pass `claude-opus-5-5`. Do not pass the `opus` alias; that tracks the latest
+Opus, which may not be 5.5.
 
 If a launch still prints a background session id, keep it. You must `claude
 stop` and `claude rm` that id when the review is done.
@@ -100,24 +101,35 @@ stop` and `claude rm` that id when the review is done.
 ### Cursor Grok Fast
 
 Cursor has no `grok` alias. Resolve the newest high-effort Fast Grok, then
-launch:
+launch. Current ids are unprefixed, such as `grok-4.7-high-fast`. Older builds
+used `cursor-grok-4.6-high-fast`.
 
 ```bash
-GROK_MODEL="$(cursor-agent --list-models | awk '/^cursor-grok-[0-9.]+-high-fast / {print $1}' | sort -V | tail -1)"
+GROK_MODEL="$(cursor-agent --list-models | awk '
+  $1 ~ /^(cursor-)?grok-[0-9.]+-high-fast$/ {
+    id = $1
+    ver = id
+    sub(/^(cursor-)?grok-/, "", ver)
+    sub(/-high-fast$/, "", ver)
+    print ver "\t" id
+  }
+' | sort -V | tail -1 | cut -f2)"
 cursor-agent -p --yolo --trust --model "$GROK_MODEL" \
   "Use the code-review skill to review <PR_URL>" \
   >"$LOG_DIR/cursor.log" 2>&1
 ```
 
-Skip `xhigh-fast`. If no id matches, stop and tell the user.
+Skip `xhigh-fast` and non-fast `high`. If no id matches, stop and tell the user.
 
 ### Codex
 
 ```bash
-codex exec --dangerously-bypass-approvals-and-sandbox \
+codex exec --dangerously-bypass-approvals-and-sandbox --model gpt-6-sol \
   "Use the code-review skill to review <PR_URL>" \
   >"$LOG_DIR/codex.log" 2>&1
 ```
+
+Pass `gpt-6-sol`. Do not rely on Codex's configured default.
 
 Do not use `codex review`. That is Codex's built-in local review, not the
 `code-review` skill.

@@ -4,7 +4,7 @@ description: >-
   Review a GitHub pull request and post findings directly on the PR. Use when
   the user asks for a code review, PR review, or to review a pull request.
   PR-only — does not review local worktrees or branches.
-model: opus
+model: claude-opus-5-5
 context: fork
 user-invocable: true
 ---
@@ -146,7 +146,7 @@ unsafe. If an authoritative path below is unavailable, use
   metadata directly; the normal model context does not expose it. Do not guess
   an OpenCode session to export.
 - **Cursor:** in the Cursor Mac app, use the exact model identity explicitly
-  injected into the current system context (for example, `Cursor Grok 4.6`). In
+  injected into the current system context (for example, `Grok 4.7`). In
   CLI/host-stream mode, use `system/init.model` when that current event was
   supplied to the agent. Preserve either value exactly as a runtime identity or
   display name; do not upgrade it to an assumed provider model ID. Cursor does
