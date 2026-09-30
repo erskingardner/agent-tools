@@ -27,7 +27,7 @@ round of reviewers.
 | --- | --- |
 | Codex | `codex exec --model gpt-6-sol` |
 | Claude Opus 5.5 | `claude --model claude-opus-5-5` |
-| Cursor Grok Fast | newest `grok-*-high-fast` from `cursor-agent --list-models` (older ids are `cursor-grok-*-high-fast`) |
+| Cursor Grok Fast | newest `grok-*-high-fast` from `agent --list-models` (older ids are `cursor-grok-*-high-fast`) |
 
 - If you are **Codex** → launch Claude + Cursor
 - If you are **Cursor** → launch Claude + Codex
@@ -36,8 +36,7 @@ round of reviewers.
 Identity is the **host product**, not the exact model in this session. If you
 cannot tell which seat you are, ask. Do not guess.
 
-Use `cursor-agent`, not `agent`. A Grok CLI install can steal the `agent`
-name.
+Use the `agent` CLI for the Cursor seat. Do not call `cursor-agent`.
 
 ## PR
 
@@ -68,9 +67,12 @@ session id.
 Run every reviewer unattended — full bypass, no permission prompts. Use the
 YOLO flags in the commands below. Do not drop them.
 
-Redirect each reviewer's stdout and stderr to a file under `$LOG_DIR` so
-the output is still there after you reap the process. Quote those logs when
-you report an error.
+Redirect each reviewer's stdout and stderr to a file under `$LOG_DIR`. Those
+logs are how you notice a crash or a bad exit. They are not the review.
+
+GitHub is the coordination layer. The reviewer posts on the PR. After a seat
+finishes, read its findings from GitHub. Do not parse findings out of the log,
+and do not ask the reviewer to write a JSON file or any other local result.
 
 Tell the user which two you started, the PR URL, `$STARTED_AT`, `$HEAD_SHA`,
 and `$LOG_DIR`. Then watch them. Do not walk away.
@@ -105,7 +107,7 @@ launch. Current ids are unprefixed, such as `grok-4.7-high-fast`. Older builds
 used `cursor-grok-4.6-high-fast`.
 
 ```bash
-GROK_MODEL="$(cursor-agent --list-models | awk '
+GROK_MODEL="$(agent --list-models | awk '
   $1 ~ /^(cursor-)?grok-[0-9.]+-high-fast$/ {
     id = $1
     ver = id
@@ -114,7 +116,7 @@ GROK_MODEL="$(cursor-agent --list-models | awk '
     print ver "\t" id
   }
 ' | sort -V | tail -1 | cut -f2)"
-cursor-agent -p --yolo --trust --model "$GROK_MODEL" \
+agent -p --yolo --trust --model "$GROK_MODEL" \
   "Use the code-review skill to review <PR_URL>" \
   >"$LOG_DIR/cursor.log" 2>&1
 ```
@@ -134,19 +136,41 @@ Pass `gpt-6-sol`. Do not rely on Codex's configured default.
 Do not use `codex review`. That is Codex's built-in local review, not the
 `code-review` skill.
 
-`cursor-agent -p` and `codex exec` print to stdout and exit. Still treat
+`agent -p` and `codex exec` print to stdout and exit. Still treat
 their PIDs as yours to reap so leftover shell jobs do not pile up.
 
 ## Watch and reap
 
-Poll. Do not block the whole session on one long wait, and do not ignore the
-jobs after launch.
+Watch each seat on its own. The 30-minute budget is a ceiling, not a wait.
+The moment a seat succeeds or fails, decide that seat and tell the user. Do
+not hold that decision until the other seat finishes or the clock runs out.
 
-Each reviewer has a **30-minute** wall-clock budget from `$STARTED_AT`. If a
-job is still running at 30 minutes, stop and reap it and treat that as an
-error. Do not poll forever — including when both are still running.
+Poll. Do not block the session on one long wait.
 
-As **each** reviewer finishes, clean it up immediately:
+On each check, for each seat that is not yet decided:
+
+1. If its review from this round is on the PR, the seat succeeded. Reap the
+   process if it is still alive.
+2. If the process has exited, reap it now. Success is a review on the PR.
+   Anything else — non-zero exit, crash, or a clean exit that never posted —
+   is a failure. Read the exit code and the log.
+3. If the process is still running but the log already shows a fatal failure
+   (bad model id, auth, crash, usage limit), kill and reap it now.
+4. Otherwise it is still working. Leave it running.
+
+An empty or quiet log while the process is alive is not a failure. These CLIs
+often buffer stdout until they exit.
+
+A seat **succeeded** only when its review is on the PR: submitted at or after
+`$STARTED_AT`, on `$HEAD_SHA`. A seat **failed** when it exited without that
+review, exited non-zero, crashed, or had to be killed.
+
+When a seat fails, say so immediately. Name the seat, the exit code or the
+reason you killed it, and a short log excerpt. Then keep watching the other
+seat. If both fail, stop — do not run the address pass. If one succeeds and
+one fails, address the review that landed once the remaining seat is reaped.
+
+As soon as a seat is decided, clean it up:
 
 1. If its PID is still alive, stop it.
 2. If it has a Claude session id, `claude stop <id>` then `claude rm <id>`.
@@ -154,30 +178,16 @@ As **each** reviewer finishes, clean it up immediately:
    started.
 3. Close the terminal / background shell job so it is gone, not detached.
 
-A reviewer is done when its process has exited **or** its review is on the
-PR. Prefer process exit; use the PR as a backup if a process hangs after
-posting.
+At 30 minutes from `$STARTED_AT`, kill whatever is still running and count
+that seat as failed. Do not poll past that.
 
-If one is still running long after the other has finished, stop and reap the
-stuck one, treat that as an error, then continue with whatever reviews landed.
-Still do not exceed the 30-minute budget.
-
-Capture exit codes from both jobs. Read their log files for stderr and any
-failure text. A reviewer **errored** if it failed to start, exited non-zero,
-crashed, hung and had to be killed, or never posted a review to the PR.
-
-**Tell the user about every reviewer error.** Name the seat, what failed,
-the exit code / hang reason, and the relevant log excerpt. Do not swallow,
-retry silently, or summarize it away. If both reviewers error, say so and
-**stop** — do not run the address pass. If only one errored, say so, then
-address findings from the review that landed.
-
-Do not start the address pass until **both** reviewers have been reaped.
+Do not start the address pass until both seats have been reaped.
 
 ## Address (one pass)
 
-Load reviews from the PR (`gh pr view`, `gh api` pull-request reviews and
-comments). Do not ask the user which findings to take.
+Load findings from GitHub only (`gh pr view`, `gh api` pull-request reviews
+and comments). The logs are not an input to this pass. Do not ask the user
+which findings to take.
 
 Only address reviews from **this** round:
 
