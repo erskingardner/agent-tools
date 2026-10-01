@@ -3,7 +3,7 @@ name: self-review
 description: >-
   Dispatch the other two review agents to review the current PR, reap those
   sessions when they finish, then do one pass addressing their findings. The
-  three seats are Codex GPT-6 Sol, Claude Opus 5.5, and latest Cursor Grok
+  three seats are Codex GPT-6.1 Sol, Claude Opus 5.5, and latest Cursor Grok
   Fast. Use
   when the user asks for a self-review, to get the other agents to review, or
   to have the other two review a PR after the current agent finished building.
@@ -15,7 +15,7 @@ user-invocable: true
 You are the builder. Do not review this PR yourself. Identify which of the
 three seats you are, then launch the other two as reviewers via CLI.
 
-Pin Claude to Opus 5.5 and Codex to GPT-6 Sol. Resolve the Grok family at
+Pin Claude to Opus 5.5 and Codex to GPT-6.1 Sol. Resolve the Grok family at
 launch time so that seat stays current when Grok ships a new generation.
 
 Do **one** review → reap → address loop, then stop. Do not dispatch a second
@@ -25,7 +25,7 @@ round of reviewers.
 
 | Seat | How to pick the model |
 | --- | --- |
-| Codex | `codex exec --model gpt-6-sol` |
+| Codex | `codex exec --model gpt-6.1-sol` |
 | Claude Opus 5.5 | `claude --model claude-opus-5-5` |
 | Cursor Grok Fast | newest `grok-*-high-fast` from `agent --list-models` (older ids are `cursor-grok-*-high-fast`) |
 
@@ -36,7 +36,8 @@ round of reviewers.
 Identity is the **host product**, not the exact model in this session. If you
 cannot tell which seat you are, ask. Do not guess.
 
-Use the `agent` CLI for the Cursor seat. Do not call `cursor-agent`.
+Use the `agent` CLI for the Cursor seat, via the launcher script below.
+Do not call `cursor-agent`.
 
 ## PR
 
@@ -102,42 +103,46 @@ stop` and `claude rm` that id when the review is done.
 
 ### Cursor Grok Fast
 
-Cursor has no `grok` alias. Resolve the newest high-effort Fast Grok, then
-launch. Current ids are unprefixed, such as `grok-4.7-high-fast`. Older builds
-used `cursor-grok-4.6-high-fast`.
+Cursor has no `grok` alias. Do not inline `agent --list-models`, a pipe, a
+variable assignment, or a redirect. That command does not match Claude's
+`Bash(agent *)` allow rule, so the launch stalls on a permission prompt.
+
+Run the launcher next to this skill: `scripts/launch-cursor-review.sh`. It
+picks the newest `grok-*-high-fast` (skipping `xhigh-fast` and non-fast
+`high`) and writes the log itself. Current ids look like
+`grok-4.7-high-fast`. Older builds used `cursor-grok-4.6-high-fast`.
+
+Invoke it as one command. Use the script's absolute path and a literal
+absolute log path. No `$LOG_DIR`, no `>`, no command substitution.
 
 ```bash
-GROK_MODEL="$(agent --list-models | awk '
-  $1 ~ /^(cursor-)?grok-[0-9.]+-high-fast$/ {
-    id = $1
-    ver = id
-    sub(/^(cursor-)?grok-/, "", ver)
-    sub(/-high-fast$/, "", ver)
-    print ver "\t" id
-  }
-' | sort -V | tail -1 | cut -f2)"
-agent -p --yolo --trust --model "$GROK_MODEL" \
-  "Use the code-review skill to review <PR_URL>" \
-  >"$LOG_DIR/cursor.log" 2>&1
+bash /absolute/path/to/self-review/scripts/launch-cursor-review.sh \
+  /absolute/path/to/cursor.log \
+  <PR_URL>
 ```
 
-Skip `xhigh-fast` and non-fast `high`. If no id matches, stop and tell the user.
+If no id matches, the script exits non-zero. Stop and tell the user.
 
 ### Codex
 
-```bash
-codex exec --dangerously-bypass-approvals-and-sandbox --model gpt-6-sol \
-  "Use the code-review skill to review <PR_URL>" \
-  >"$LOG_DIR/codex.log" 2>&1
-```
-
-Pass `gpt-6-sol`. Do not rely on Codex's configured default.
+Do not inline `codex exec` with a redirect. Run the launcher next to this
+skill: `scripts/launch-codex-review.sh`. It pins `gpt-6.1-sol` and writes the
+log itself. Do not rely on Codex's configured default.
 
 Do not use `codex review`. That is Codex's built-in local review, not the
 `code-review` skill.
 
-`agent -p` and `codex exec` print to stdout and exit. Still treat
-their PIDs as yours to reap so leftover shell jobs do not pile up.
+Invoke the launcher as one command. Use the script's absolute path and a
+literal absolute log path. No `$LOG_DIR`, no `>`, no command substitution.
+
+```bash
+bash /absolute/path/to/self-review/scripts/launch-codex-review.sh \
+  /absolute/path/to/codex.log \
+  <PR_URL>
+```
+
+Both launchers print to stdout and exit. Still treat their PIDs as yours to
+reap so leftover shell jobs do not pile up.
 
 ## Watch and reap
 
