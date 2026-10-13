@@ -23,7 +23,7 @@ Resolve the issue with `gh issue view <url-or-number>`. Prefer the full URL so t
 Copy this checklist and track it:
 
 ```
-- [ ] 1. Read the issue
+- [ ] 1. Read the issue and assign myself
 - [ ] 2. Validate it still exists in the codebase
 - [ ] 3. Ask whether this is a symptom of a deeper root cause
 - [ ] 4a. If yes: stop, investigate related open issues, discuss with the user
@@ -43,6 +43,12 @@ gh issue view <url-or-number> --comments
 ```
 
 Read title, body, labels, comments, linked PRs, and closing/related references. Restate the reported problem, expected vs actual behavior, and any constraints the reporter gave. If the issue is closed, already assigned a fix PR, or too vague to act on, stop and say so.
+
+Once the issue is open and you are going to work on it, assign the authenticated GitHub user. Do not remove anyone already assigned.
+
+```bash
+gh issue edit <url-or-number> --add-assignee @me
+```
 
 ### 2. Validate that the issue is still relevant
 
@@ -97,22 +103,11 @@ When the failing-then-passing tests are in place and the fix is committed:
 
 1. Push the branch.
 2. Create a **draft** PR with `gh pr create --draft`.
-3. Link the issue (`Fixes #<number>`).
+3. Write the body with [gh-create-pr](../gh-create-pr/SKILL.md). Put
+   `Fixes #<number>` below the Problem and Fix sections, not above them.
 4. Return the draft PR URL.
 5. Immediately run [self-review](../self-review/SKILL.md) on that PR URL. Do
    not stop at the PR link.
-
-Use this body shape:
-
-```markdown
-## Summary
-- <what was wrong>
-- <what the fix does>
-
-## Test plan
-- [ ] New test failed before the fix and passes after
-- [ ] <any extra verification>
-```
 
 ### 6. Self-review the draft PR
 
