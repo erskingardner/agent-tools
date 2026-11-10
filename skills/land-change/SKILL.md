@@ -11,7 +11,7 @@ description: >-
 user-invocable: true
 ---
 
-If the repository has its own `.agents/skills/land-change/` or `.claude/skills/land-change/`, stop and follow that one instead. It is the repo's specific version of this skill.
+If the repository has its own `.agents/skills/land-change/` or `.claude/skills/land-change/`, stop and follow that one instead. It is the repo's specific version of this skill. If the file you are reading is already that copy, carry on.
 
 # Land a change
 
@@ -95,9 +95,11 @@ different path for a special kind of change (a release PR, a docs-only
 change), follow that instead.
 
 A test that fails locally is yours until shown otherwise. Before calling it
-unrelated, `git fetch origin <base>` and run it on the merge-base
-(`git merge-base HEAD origin/<base>`). If it fails there too, note that in
-the PR. If it passes there, your change broke it. Tests with real sockets or
+unrelated, `git fetch origin <base>` and run it on the merge-base in a
+temporary worktree (`git worktree add --detach <tmp> "$(git merge-base HEAD
+origin/<base>)"`), never by checking it out in your own; remove the worktree
+afterwards. If it fails there too, note that in the PR. If it passes there,
+your change broke it. Tests with real sockets or
 timing can stretch on a loaded machine: rerun a failure alone before judging
 it.
 
@@ -115,8 +117,14 @@ your own change, and you do not decide alone that it is good enough.
 - Fix what is real, redo step 2 for what the fix touched, commit, and review
   again.
 - You are done when both reviewers say `VERDICT: merge` on the same head
-  commit. A follow-up commit that only answers a reviewer's note does not need
-  another round; a substantive change does.
+  commit. Record that commit: it is the **reviewed head**. Any later commit
+  that changes the tree needs a new round; there is no exception for small
+  fixes.
+- A rebase onto a newer base changes the SHA but not necessarily the change.
+  It keeps the verdicts only when `git range-diff <old-base>..<reviewed-head>
+  origin/<base>..HEAD` marks every commit `=` (patch unchanged). The new HEAD
+  is then the reviewed head. Any other rebase, including one that resolved
+  conflicts, needs a new round.
 
 Count the rounds; the report in step 6 says how many it took.
 
@@ -173,22 +181,22 @@ issue.
 
 ## 5. Make it ready
 
-The PR is ready when its required checks pass on the reviewed head and it
-can merge without conflicts. Read its state:
+The PR is ready when its head is the reviewed head (step 3), its required
+checks pass, and it can merge without conflicts. Read its state:
 
 ```sh
 gh pr view <pr> --json headRefOid,mergeable,mergeStateStatus,reviewDecision
 ```
 
-`headRefOid` must be the commit both reviewers passed. Then act on
+`headRefOid` must be the reviewed head. Then act on
 `mergeStateStatus`:
 
 | State | Meaning | What to do |
 | --- | --- | --- |
 | `CLEAN`, `HAS_HOOKS` | Checks pass, nothing blocks | Ready: step 6 |
 | `UNSTABLE` | A non-required check failed | Classify it with the table below; ready once it is not yours |
-| `BEHIND` | The base moved and the branch must be up to date | Rebase on `origin/<base>`, redo step 2, push, check again |
-| `DIRTY` | Conflicts | Rebase and resolve, redo step 2, and step 3 if the resolution changed behavior; push, check again |
+| `BEHIND` | The base moved and the branch must be up to date | Rebase on `origin/<base>`, redo step 2, apply step 3's rebase rule (`range-diff`), push, check again |
+| `DIRTY` | Conflicts | Rebase and resolve, redo steps 2 and 3, push, check again |
 | `BLOCKED` | Required checks pending or failing, or a required human review | Wait for checks (below). If only a human approval is missing (`reviewDecision: REVIEW_REQUIRED`), it is ready: step 6 |
 | `UNKNOWN` | GitHub is still computing | Check again shortly |
 
@@ -206,7 +214,7 @@ current base, then decide which case it is:
 
 | Case | How you know | What to do |
 | --- | --- | --- |
-| Your bug | Fails on your branch, passes on `origin/<base>` | Fix it, redo step 2 (and step 3 if the fix is substantive), push |
+| Your bug | Fails on your branch, passes on `origin/<base>` | Fix it, redo steps 2 and 3, push |
 | Conflict with a change that landed ahead of you | Passes on your branch alone, fails once rebased onto `origin/<base>` | Rebase, fix the interaction, redo steps 2–3, push |
 | Flake | Intermittent, also fails on `origin/<base>`, or in code your change cannot reach | Leave the test alone. Open or update an issue for it (search the test name first), then rerun the job once |
 | Base is broken | The same failure in the base branch's own CI | Find the open PR fixing it and rebase once it lands. Do not fix it again in your PR |
@@ -235,7 +243,7 @@ Nothing else: no finding lists, no round-by-round history, no diff tour.
 ## 7. Merge (only when asked)
 
 Merge only when the user asks, and only the head that was verified and
-reviewed: confirm `headRefOid` is still that commit.
+reviewed: confirm `headRefOid` is still the reviewed head.
 
 Check whether the base branch has a merge queue:
 

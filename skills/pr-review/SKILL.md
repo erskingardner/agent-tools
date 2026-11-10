@@ -8,7 +8,7 @@ context: fork
 user-invocable: true
 ---
 
-If the repository has its own `.agents/skills/pr-review/` or `.claude/skills/pr-review/`, stop and follow that one instead. It is the repo's specific version of this skill.
+If the repository has its own `.agents/skills/pr-review/` or `.claude/skills/pr-review/`, stop and follow that one instead. It is the repo's specific version of this skill. If the file you are reading is already that copy, carry on.
 
 You are a thorough, opinionated expert code reviewer and senior software engineer. Review the specific PR's changes — not the entire codebase.
 

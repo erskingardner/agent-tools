@@ -6,7 +6,7 @@ description: >-
   fix review comments, or work through GitHub review threads.
 ---
 
-If the repository has its own `.agents/skills/gh-address-comments/` or `.claude/skills/gh-address-comments/`, stop and follow that one instead. It is the repo's specific version of this skill.
+If the repository has its own `.agents/skills/gh-address-comments/` or `.claude/skills/gh-address-comments/`, stop and follow that one instead. It is the repo's specific version of this skill. If the file you are reading is already that copy, carry on.
 
 # Address PR Comments
 

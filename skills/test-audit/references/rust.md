@@ -89,11 +89,12 @@ TOOLS="$(rustc --print sysroot)/lib/rustlib/$(rustc -vV | sed -n 's/^host: //p')
 find "$SCRATCH/profraw" -name '*.profraw' > "$SCRATCH/profraw.list"
 test -s "$SCRATCH/profraw.list" || echo "no profiles written"
 "$TOOLS/llvm-profdata" merge -sparse -f "$SCRATCH/profraw.list" -o "$SCRATCH/<crate>.profdata"
-set -- $(cargo nextest list -p <crate> --locked "${FEATURES[@]}" --message-format json |
-  jq -r '.["rust-suites"][]["binary-path"]')
-first=$1; shift
-objects=(); for binary in "$@"; do objects+=(-object "$binary"); done
-"$TOOLS/llvm-cov" export -format=lcov -instr-profile "$SCRATCH/<crate>.profdata" "$first" \
+binaries=()   # read line by line: paths can contain spaces
+while IFS= read -r binary; do binaries+=("$binary"); done < <(
+  cargo nextest list -p <crate> --locked "${FEATURES[@]}" --message-format json |
+    jq -r '.["rust-suites"][]["binary-path"]')
+objects=(); for binary in "${binaries[@]:1}"; do objects+=(-object "$binary"); done
+"$TOOLS/llvm-cov" export -format=lcov -instr-profile "$SCRATCH/<crate>.profdata" "${binaries[0]}" \
   "${objects[@]}" -ignore-filename-regex='/\.cargo/registry/|/rustc/|/target/' \
   > "$SCRATCH/<crate>-baseline.lcov"
 ```

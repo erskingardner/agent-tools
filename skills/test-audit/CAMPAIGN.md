@@ -174,10 +174,11 @@ Done when the lane's keepers and siblings pass.
 ## 7. Preservation review
 
 Before a lane leaves your machine, have an independent read-only reviewer
-(the `review-local` skill) compare the deleted tests with the keepers. Add to
-its notes: look for contracts that lost their only proof, and for new
-assertions that cannot fail, such as a rejection row production never
-reaches.
+(the `review-local` skill) compare the deleted tests with the keepers. Put
+this focus in its context file (`--context`, not `--notes`, which is for
+answering a previous round): look for contracts that lost their only proof,
+and for new assertions that cannot fail, such as a rejection row production
+never reaches.
 
 Check each finding's premise before acting on it. Run the test a reviewer
 says cannot pass and build the target it says does not compile, both with the
@@ -197,12 +198,15 @@ and every consolidated contract has a caught mutation.
 
 ## 8. Land
 
-One lane per PR, through the `land-change` skill. A lane is a diff a reviewer
-can read whole; a package-wide diff is not. Land the shared-harness PR first.
-Lanes that touch disjoint files can be reviewed and merged together; rebase a
-lane onto the default branch when one it overlaps merges first.
+One lane per PR, through the `land-change` skill, which stops at a ready PR.
+A lane is a diff a reviewer can read whole; a package-wide diff is not. The
+shared-harness PR goes first: ask the user to merge it before you cut lane
+branches, since every lane builds on it. Lanes that touch disjoint files can
+be reviewed and made ready together; rebase a lane onto the default branch
+when one it overlaps merges first.
 
-Done when every lane PR is merged.
+Done when every lane PR is ready, and the user has been told which order to
+merge them in.
 
 ## 9. Product defects
 

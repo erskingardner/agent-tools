@@ -95,6 +95,11 @@ normalize_opencode_skills_dir() {
 echo "Syncing skills from $SKILLS_SRC"
 normalize_opencode_skills_dir
 
+# Prune once per target first, so stale links go even when no skills remain.
+for target in "${TARGETS[@]}"; do
+  prune_stale_links "${target%%:*}" "${target#*:}"
+done
+
 shopt -s nullglob
 skills=("$SKILLS_SRC"/*/)
 if [[ ${#skills[@]} -eq 0 ]]; then
@@ -109,7 +114,6 @@ for skill_dir in "${skills[@]}"; do
   for target in "${TARGETS[@]}"; do
     tool="${target%%:*}"
     dest_root="${target#*:}"
-    prune_stale_links "$tool" "$dest_root"
     link_skill "$tool" "$dest_root" "$name"
   done
 done

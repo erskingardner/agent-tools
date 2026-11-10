@@ -25,7 +25,7 @@ fi
 
 verdict=""
 if [[ -f "$review" ]]; then
-  verdict="$(grep -v '^[[:space:]]*$' "$review" | tail -1 | tr -d '\r' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
+  verdict="$(grep -v '^[[:space:]]*$' "$review" | tail -1 | tr -d '\r' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' || true)"
 fi
 case "$verdict" in
   "VERDICT: merge" | "VERDICT: changes-needed") ;;
@@ -37,8 +37,10 @@ esac
 
 # A fresh checkout has no ignored files, so --ignored also catches writes to
 # ignored paths such as build output.
-written="$(git -C "$review_dir/$seat" status --porcelain --ignored=matching)"
-if [[ -n "$written" ]]; then
+if ! written="$(git -C "$review_dir/$seat" status --porcelain --ignored=matching 2>&1)"; then
+  echo "FAIL $seat: cannot inspect its checkout: $written"
+  failed=1
+elif [[ -n "$written" ]]; then
   echo "FAIL $seat: wrote into its checkout:"
   echo "$written"
   failed=1

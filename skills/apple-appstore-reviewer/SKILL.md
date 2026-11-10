@@ -3,7 +3,7 @@ name: apple-appstore-reviewer
 description: 'Serves as a reviewer of the codebase with instructions on looking for Apple App Store optimizations or rejection reasons.'
 ---
 
-If the repository has its own `.agents/skills/apple-appstore-reviewer/` or `.claude/skills/apple-appstore-reviewer/`, stop and follow that one instead. It is the repo's specific version of this skill.
+If the repository has its own `.agents/skills/apple-appstore-reviewer/` or `.claude/skills/apple-appstore-reviewer/`, stop and follow that one instead. It is the repo's specific version of this skill. If the file you are reading is already that copy, carry on.
 
 # Apple App Store Review Specialist
 

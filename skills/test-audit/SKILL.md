@@ -11,7 +11,7 @@ description: >-
 user-invocable: true
 ---
 
-If the repository has its own `.agents/skills/test-audit/` or `.claude/skills/test-audit/`, stop and follow that one instead. It is the repo's specific version of this skill.
+If the repository has its own `.agents/skills/test-audit/` or `.claude/skills/test-audit/`, stop and follow that one instead. It is the repo's specific version of this skill. If the file you are reading is already that copy, carry on.
 
 # Test audit
 

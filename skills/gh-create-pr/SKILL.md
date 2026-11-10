@@ -9,7 +9,7 @@ description: >-
 user-invocable: true
 ---
 
-If the repository has its own `.agents/skills/gh-create-pr/` or `.claude/skills/gh-create-pr/`, stop and follow that one instead. It is the repo's specific version of this skill.
+If the repository has its own `.agents/skills/gh-create-pr/` or `.claude/skills/gh-create-pr/`, stop and follow that one instead. It is the repo's specific version of this skill. If the file you are reading is already that copy, carry on.
 
 # Create a pull request
 

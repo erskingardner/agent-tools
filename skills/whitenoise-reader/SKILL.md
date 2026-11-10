@@ -3,7 +3,7 @@ name: whitenoise-reader
 description: Query the White Noise V5 audit reader (https://goggles.ipf.dev/v1) to investigate a Marmot/MLS group from MDK audit records. Use when an agent needs a group's per-source epoch history, convergence or fork evidence, Welcome delivery chains, recovery obligations and attempts, or workload counts, or needs to fetch the original audit records behind a finding. Requires a reader bearer token (wnar_...) stored locally.
 ---
 
-If the repository has its own `.agents/skills/whitenoise-reader/` or `.claude/skills/whitenoise-reader/`, stop and follow that one instead. It is the repo's specific version of this skill.
+If the repository has its own `.agents/skills/whitenoise-reader/` or `.claude/skills/whitenoise-reader/`, stop and follow that one instead. It is the repo's specific version of this skill. If the file you are reading is already that copy, carry on.
 
 # White Noise audit reader
 

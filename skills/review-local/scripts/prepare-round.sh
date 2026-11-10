@@ -59,8 +59,10 @@ repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 repo_name="$(basename "$repo_root")"
 
-if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
-  echo "warning: uncommitted changes are not part of this round; commit first" >&2
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "uncommitted or untracked files; commit (or remove) them first:" >&2
+  git status --short >&2
+  exit 1
 fi
 if [[ -z "$context_file" ]]; then
   echo "warning: no --context; reviewers cannot judge whether the change is needed" >&2

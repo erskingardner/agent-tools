@@ -11,7 +11,7 @@ description: >-
 user-invocable: true
 ---
 
-If the repository has its own `.agents/skills/review-local/` or `.claude/skills/review-local/`, stop and follow that one instead. It is the repo's specific version of this skill.
+If the repository has its own `.agents/skills/review-local/` or `.claude/skills/review-local/`, stop and follow that one instead. It is the repo's specific version of this skill. If the file you are reading is already that copy, carry on.
 
 # Review a local change
 
@@ -37,8 +37,9 @@ Your seat is your **host product**, not the model in this session:
 - Cursor → launch `claude` and `codex`
 - OpenCode, or any other builder → launch `claude` and `codex`
 
-If you cannot tell which host you are in, ask. Do not guess. If a CLI is
-missing, a reviewer from another model family can take that seat.
+If you cannot tell which host you are in, ask. Do not guess. If a seat's CLI
+is missing or not logged in, stop and tell the user. Do not improvise a
+launch: the restrictions live only in `scripts/launch-review.sh`.
 
 ## What this protects against
 
@@ -66,7 +67,8 @@ allow rules, so a launch does not stall on a prompt.
 
 ## Prepare a round
 
-**Commit first.** Uncommitted changes are not in the round.
+**Commit first.** `prepare-round.sh` refuses to run with uncommitted or
+untracked files, so every verdict covers exactly what you will ship.
 
 **Write the context.** Reviewers judge whether the change should exist, not
 only whether the code is right, so they need to know what it is for. Write a
