@@ -119,17 +119,14 @@ your own change, and you do not decide alone that it is good enough.
 - Fix what is real, redo step 2 for what the fix touched, commit, and review
   again.
 - You are done when both reviewers say `VERDICT: merge` on the same head
-  commit. Record that commit as the **reviewed head**, and the fingerprint of
-  the whole change as the **reviewed patch**:
-
-  ```sh
-  git diff "$(git merge-base HEAD origin/<base>)" HEAD | git patch-id --stable
-  ```
-
-- Any later change of HEAD (a rebase, signing, an amend, a squash) keeps the
-  verdicts only when the same command gives the same patch id. The new HEAD
-  then becomes the reviewed head. A different id means the change itself
-  changed: run a new round. There is no exception for small fixes.
+  commit. Record that commit as the **reviewed head**.
+- A later change of HEAD keeps the verdicts only when the files are exactly
+  the same: `git rev-parse HEAD^{tree}` equals `git rev-parse
+  <reviewed-head>^{tree}`. That covers a reworded message or an added
+  signature. The new HEAD then becomes the reviewed head. Anything else,
+  including any rebase, needs a new round; there is no exception for small
+  fixes. To make that rarer, rebase onto `origin/<base>` before the final
+  round.
 
 Count the rounds; the report in step 6 says how many it took.
 
@@ -198,7 +195,7 @@ gh pr view <pr> --json headRefOid,mergeable,mergeStateStatus,reviewDecision
 | --- | --- | --- |
 | `CLEAN`, `HAS_HOOKS` | Checks pass, nothing blocks | Ready: step 6 |
 | `UNSTABLE` | A non-required check failed | Classify it with the table below; ready once it is not yours |
-| `BEHIND` | The base moved and the branch must be up to date | Rebase on `origin/<base>`, redo step 2, apply step 3's patch-id rule, push, check again |
+| `BEHIND` | The base moved and the branch must be up to date | Rebase on `origin/<base>`, redo step 2, redo step 3 (a rebase needs a new round), push, check again |
 | `DIRTY` | Conflicts | Rebase and resolve, redo steps 2 and 3, push, check again |
 | `BLOCKED` | Required checks pending or failing, or a required human review | Wait for checks (below). If only a human approval is missing (`reviewDecision: REVIEW_REQUIRED`), it is ready: step 6 |
 | `UNKNOWN` | GitHub is still computing | Check again shortly |
