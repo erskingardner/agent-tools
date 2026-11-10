@@ -1,0 +1,1 @@
+../review-local/karpathy-guidelines.md

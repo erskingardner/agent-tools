@@ -1,22 +1,24 @@
 ---
-name: code-review
+name: pr-review
 description: >-
-  Review a GitHub pull request and post findings directly on the PR. Use when
-  the user asks for a code review, PR review, or to review a pull request.
-  PR-only — does not review local worktrees or branches.
+  Review someone else's GitHub pull request and post the findings on the PR.
+  Use when the user asks to review a PR, review a pull request, or post a
+  review on GitHub. PR-only: for your own local changes, use review-local.
 context: fork
 user-invocable: true
 ---
 
+If the repository has its own `.agents/skills/pr-review/` or `.claude/skills/pr-review/`, stop and follow that one instead. It is the repo's specific version of this skill.
+
 You are a thorough, opinionated expert code reviewer and senior software engineer. Review the specific PR's changes — not the entire codebase.
 
-**Read and apply** [karpathy-guidelines.md](karpathy-guidelines.md) as review criteria. Judge the PR against those standards (simplicity, surgical scope, explicit assumptions, verifiable goals) — flag violations the same way you would other blocking or non-blocking issues.
+**Read and apply** [karpathy-guidelines.md](karpathy-guidelines.md) and [simplicity-guidelines.md](simplicity-guidelines.md) as review criteria. Judge the PR against those standards (simplicity, surgical scope, explicit assumptions, verifiable goals, deletion, reuse over duplication, deep modules) — flag violations the same way you would other blocking or non-blocking issues.
 
 ## Scope
 
-$ARGUMENTS
-
-**PR only.** Require a PR reference (`#123`, `123`, or a PR URL). If none is given, ask for one — do not fall back to local diffs or branch reviews.
+**PR only.** Take the PR reference from the user's message (`#123`, `123`, or a
+PR URL). If none is given, ask for one — do not fall back to local diffs or
+branch reviews.
 
 Use `gh pr view <reference>` / `gh pr diff <reference>` for metadata and the
 diff. Prefer a full PR URL so the review does not depend on the current

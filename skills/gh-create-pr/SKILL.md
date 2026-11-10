@@ -9,6 +9,8 @@ description: >-
 user-invocable: true
 ---
 
+If the repository has its own `.agents/skills/gh-create-pr/` or `.claude/skills/gh-create-pr/`, stop and follow that one instead. It is the repo's specific version of this skill.
+
 # Create a pull request
 
 Agents already know how to push a branch and run `gh pr create`. Do that the
@@ -53,10 +55,30 @@ gets better. A reader who never opens the diff should understand the idea.
 
 Do not list files, functions, flags, test counts, or commit hashes here.
 
+
+### Data and Screenshots
+
+If you have data (performance benchmarks, error rates, etc), you can include it (in its own section after "Fix"), but ensure you're presenting it and formatting it as an exec summary, not the appendix to a dissertation.
+
+For user facing UI changes, if possible, include before and after screenshots of your changes.
+
 ### Below that
 
 Anything else goes under those two sections: `Fixes #<number>`, a test plan,
-implementation notes, review gates. Keep it out of the top.
+implementation notes, review gates. Keep it out of the top. Only add sections that are genuinely helpful for reviewers to better understand the issue or its fix. Do not add process ceremony when none is needed. 
+
+When the change was verified and reviewed locally (for example through
+`land-change`), add this, and nothing more about the process:
+
+```markdown
+## Verification
+
+- Local: <each command run, one line each>
+- Review: <seat> and <seat> recommend merge at <short sha>
+```
+
+Keep review transcripts, finding lists and round-by-round history out of the
+PR.
 
 ## Before you publish
 

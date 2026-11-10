@@ -58,6 +58,29 @@ link_skill() {
   echo "  [$tool] $name (linked)"
 }
 
+# Remove links that pointed into this repo for skills that no longer exist.
+# Only links whose target is under $SKILLS_SRC are touched, so links owned by
+# another tool (or a curated install) are left alone.
+prune_stale_links() {
+  local tool="$1"
+  local dest_root="$2"
+  [[ -d "$dest_root" ]] || return 0
+
+  local link target
+  for link in "$dest_root"/*; do
+    [[ -L "$link" ]] || continue
+    target="$(readlink "$link")"
+    case "$target" in
+      "$SKILLS_SRC"/*) ;;
+      *) continue ;;
+    esac
+    if [[ ! -e "$link" ]]; then
+      rm "$link"
+      echo "  [$tool] $(basename "$link") (pruned removed skill)"
+    fi
+  done
+}
+
 # OpenCode previously used a whole-dir symlink; prefer a real directory of
 # per-skill links so it matches the other agents.
 normalize_opencode_skills_dir() {
@@ -86,6 +109,7 @@ for skill_dir in "${skills[@]}"; do
   for target in "${TARGETS[@]}"; do
     tool="${target%%:*}"
     dest_root="${target#*:}"
+    prune_stale_links "$tool" "$dest_root"
     link_skill "$tool" "$dest_root" "$name"
   done
 done
