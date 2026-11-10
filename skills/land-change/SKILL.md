@@ -58,7 +58,9 @@ Before writing code, read review-local's
 the standard you build to, and the reviewers in step 3 judge the change
 against the same two files.
 
-Work on a new branch off `origin/<base>`, never on `<base>` itself.
+Work on a new branch off `origin/<base>`, never on `<base>` itself. If the
+repo requires signed commits (the base branch's rules, or its `AGENTS.md`),
+sign every commit as you make it, so nothing is rewritten after review.
 
 - **Design it twice.** Unless the change is trivial (a one-line fix, a
   rename), sketch two genuinely different approaches before coding: where
@@ -117,14 +119,17 @@ your own change, and you do not decide alone that it is good enough.
 - Fix what is real, redo step 2 for what the fix touched, commit, and review
   again.
 - You are done when both reviewers say `VERDICT: merge` on the same head
-  commit. Record that commit: it is the **reviewed head**. Any later commit
-  that changes the tree needs a new round; there is no exception for small
-  fixes.
-- A rebase onto a newer base changes the SHA but not necessarily the change.
-  It keeps the verdicts only when `git range-diff <old-base>..<reviewed-head>
-  origin/<base>..HEAD` marks every commit `=` (patch unchanged). The new HEAD
-  is then the reviewed head. Any other rebase, including one that resolved
-  conflicts, needs a new round.
+  commit. Record that commit as the **reviewed head**, and the fingerprint of
+  the whole change as the **reviewed patch**:
+
+  ```sh
+  git diff "$(git merge-base HEAD origin/<base>)" HEAD | git patch-id --stable
+  ```
+
+- Any later change of HEAD (a rebase, signing, an amend, a squash) keeps the
+  verdicts only when the same command gives the same patch id. The new HEAD
+  then becomes the reviewed head. A different id means the change itself
+  changed: run a new round. There is no exception for small fixes.
 
 Count the rounds; the report in step 6 says how many it took.
 
@@ -173,9 +178,7 @@ Do not open the PR or start another round until they decide.
 
 ## 4. Open the PR
 
-If the repo requires signed commits (the base branch's rules, or its
-`AGENTS.md`), sign every commit. Push the branch and open a ready (not
-draft) PR with a description from the `gh-create-pr` skill, including its
+Push the branch and open a ready (not draft) PR with a description from the `gh-create-pr` skill, including its
 Verification section. Put `Fixes #<n>` below Problem and Fix when there is an
 issue.
 
@@ -195,7 +198,7 @@ gh pr view <pr> --json headRefOid,mergeable,mergeStateStatus,reviewDecision
 | --- | --- | --- |
 | `CLEAN`, `HAS_HOOKS` | Checks pass, nothing blocks | Ready: step 6 |
 | `UNSTABLE` | A non-required check failed | Classify it with the table below; ready once it is not yours |
-| `BEHIND` | The base moved and the branch must be up to date | Rebase on `origin/<base>`, redo step 2, apply step 3's rebase rule (`range-diff`), push, check again |
+| `BEHIND` | The base moved and the branch must be up to date | Rebase on `origin/<base>`, redo step 2, apply step 3's patch-id rule, push, check again |
 | `DIRTY` | Conflicts | Rebase and resolve, redo steps 2 and 3, push, check again |
 | `BLOCKED` | Required checks pending or failing, or a required human review | Wait for checks (below). If only a human approval is missing (`reviewDecision: REVIEW_REQUIRED`), it is ready: step 6 |
 | `UNKNOWN` | GitHub is still computing | Check again shortly |
