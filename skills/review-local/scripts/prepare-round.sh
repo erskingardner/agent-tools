@@ -98,8 +98,10 @@ fi
 
 tmp_root="${TMPDIR:-/tmp}"
 tmp_root="${tmp_root%/}"
-review_dir="$(mktemp -d "$tmp_root/review-local.XXXXXX")"
-out_dir="$(mktemp -d "$tmp_root/review-out.XXXXXX")"
+# Resolve symlinks (macOS: /var -> /private/var) so every path in the prompt
+# matches what the reviewers resolve, including OpenCode's allow rule.
+review_dir="$(cd "$(mktemp -d "$tmp_root/review-local.XXXXXX")" && pwd -P)"
+out_dir="$(cd "$(mktemp -d "$tmp_root/review-out.XXXXXX")" && pwd -P)"
 
 for seat in "${seats[@]}"; do
   git worktree add --quiet --detach "$review_dir/$seat" "$head_sha"

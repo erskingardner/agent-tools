@@ -18,7 +18,7 @@
 #   refuses MCP tools that write.
 # - Codex without --ignore-user-config loaded MCP servers from
 #   ~/.codex/config.toml, which run outside its read-only sandbox.
-# - OpenCode (checked 2026-11-17, 2.2.1 under numes): ~/.config/opencode holds
+# - OpenCode (checked 2026-11-17, under numes): ~/.config/opencode holds
 #   the user's MCP servers, custom tools and plugins, so OPENCODE_CONFIG_DIR
 #   replaces it with a round-local one whose only agent denies every tool but
 #   read, grep and glob. --standalone keeps the run off the background
