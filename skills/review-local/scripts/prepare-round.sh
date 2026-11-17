@@ -3,8 +3,9 @@
 # seat, a read-only input directory holding the diff, the context, the
 # guidelines and the prompt, and an output directory no reviewer is given.
 #
-# usage: prepare-round.sh <seat-a> <seat-b> [--context file] [--notes file] [--base ref]
-#   seat       codex | claude | cursor
+# usage: prepare-round.sh <seat-a> [<seat-b>] [--context file] [--notes file] [--base ref]
+#   seat       codex | claude | cursor | opencode; one seat only to replace a
+#              seat that could not run (see SKILL.md)
 #   --context  what the change is for: the issue text or the user's request
 #   --notes    later rounds only: previous findings and the author's answers
 #   --base     defaults to the remote's default branch (origin/HEAD)
@@ -14,14 +15,16 @@
 set -euo pipefail
 
 usage() {
-  echo "usage: prepare-round.sh <seat-a> <seat-b> [--context file] [--notes file] [--base ref]" >&2
+  echo "usage: prepare-round.sh <seat-a> [<seat-b>] [--context file] [--notes file] [--base ref]" >&2
   exit 2
 }
 
-[[ $# -ge 2 ]] || usage
-seat_a=$1
-seat_b=$2
-shift 2
+seats=()
+while [[ $# -gt 0 && $1 != --* ]]; do
+  seats+=("$1")
+  shift
+done
+[[ ${#seats[@]} -eq 1 || ${#seats[@]} -eq 2 ]] || usage
 context_file=""
 notes_file=""
 base_ref=""
@@ -36,13 +39,13 @@ while [[ $# -gt 0 ]]; do
   shift 2
 done
 
-for seat in "$seat_a" "$seat_b"; do
+for seat in "${seats[@]}"; do
   case "$seat" in
-    codex | claude | cursor) ;;
-    *) echo "unknown seat: $seat (want codex, claude or cursor)" >&2; exit 2 ;;
+    codex | claude | cursor | opencode) ;;
+    *) echo "unknown seat: $seat (want codex, claude, cursor or opencode)" >&2; exit 2 ;;
   esac
 done
-if [[ "$seat_a" == "$seat_b" ]]; then
+if [[ ${#seats[@]} -eq 2 && "${seats[0]}" == "${seats[1]}" ]]; then
   echo "the two seats must differ" >&2
   exit 2
 fi
@@ -97,7 +100,7 @@ tmp_root="${tmp_root%/}"
 review_dir="$(mktemp -d "$tmp_root/review-local.XXXXXX")"
 out_dir="$(mktemp -d "$tmp_root/review-out.XXXXXX")"
 
-for seat in "$seat_a" "$seat_b"; do
+for seat in "${seats[@]}"; do
   git worktree add --quiet --detach "$review_dir/$seat" "$head_sha"
   input="$review_dir/$seat-input"
   mkdir "$input"

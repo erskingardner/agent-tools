@@ -3,8 +3,9 @@ name: review-local
 description: >-
   Get two independent, read-only reviews of the current branch's committed
   local diff from the two agent seats that are not you (Codex GPT-6.1 Sol,
-  Claude Opus 5.5, newest Cursor Grok high-fast), before any PR exists. Then
-  answer their findings. Nothing is posted to GitHub. Use when asked for a
+  Claude Opus 5.5, newest Cursor Grok high-fast), before any PR exists, with
+  free Numes models in OpenCode as the fallback when a seat is out of usage.
+  Then answer their findings. Nothing is posted to GitHub. Use when asked for a
   self-review, a local review, or to have the other agents review a change,
   branch or worktree, and from land-change. To review someone else's PR on
   GitHub, use pr-review.
@@ -29,6 +30,7 @@ Nothing goes to GitHub. The round covers one commit on your machine.
 | `codex` | `gpt-6.1-sol` |
 | `claude` | `claude-opus-5-5` (not the `opus` alias) |
 | `cursor` | the newest `grok-*-high-fast` in `agent --list-models`, resolved at launch |
+| `opencode` | fallback only, through `numes run opencode`: the first of Kimi K3.1 Pro, GLM 5.3 Flash, DeepSeek V4.1 Flash, Nemotron 3 Ultra (all `:free`, `#high`) that finishes with a verdict |
 
 Your seat is your **host product**, not the model in this session:
 
@@ -40,6 +42,16 @@ Your seat is your **host product**, not the model in this session:
 If you cannot tell which host you are in, ask. Do not guess. If a seat's CLI
 is missing or not logged in, stop and tell the user. Do not improvise a
 launch: the restrictions live only in `scripts/launch-review.sh`.
+
+**Fallback.** When a seat cannot run because its product is out of usage (its
+log shows a usage or rate limit, or the user tells you it is out), use
+`opencode` in its place; if you are OpenCode yourself, use `cursor`. Tell the
+user which seat you replaced and why. If the other seat already finished on
+the same `HEAD_SHA`, its verdict stands: prepare a round with the replacement
+alone (`prepare-round.sh opencode --context ...`). The `opencode` seat tries
+its models in order and moves to the next only when one exits nonzero or ends
+without a verdict; the review's first line names the model that answered, and
+`opencode.log` records each attempt.
 
 ## What this protects against
 
@@ -60,7 +72,7 @@ allow rules, so a launch does not stall on a prompt.
 
 | Script | Does |
 | --- | --- |
-| `prepare-round.sh <seat-a> <seat-b> [--context file] [--notes file] [--base ref]` | Fetches, finds the merge-base with the default branch, makes each seat's checkout and read-only input (diff, context, guidelines, prompt), and prints `REVIEW_DIR`, `OUT_DIR`, `BASE`, `HEAD_SHA` |
+| `prepare-round.sh <seat-a> [<seat-b>] [--context file] [--notes file] [--base ref]` | Fetches, finds the merge-base with the default branch, makes each seat's checkout and read-only input (diff, context, guidelines, prompt), and prints `REVIEW_DIR`, `OUT_DIR`, `BASE`, `HEAD_SHA` |
 | `launch-review.sh <seat> <review-dir> <out-dir>` | Runs one seat with its restriction flags. Review → `<out-dir>/<seat>.md`, stamped with the seat and model; log → `<out-dir>/<seat>.log` |
 | `check-seat.sh <seat> <review-dir> <out-dir> <exit-code>` | Decides one seat: exit 0, a final `VERDICT:` line, and a checkout with no writes |
 | `cleanup-round.sh <review-dir>` | Removes the round's checkouts and inputs |
@@ -129,8 +141,9 @@ Anything but `OK` is a failure, whatever the review says. Tell the user right
 away: the seat, the reason, the log excerpt and any paths it wrote. Then
 check that seat's launch flags.
 
-If a seat fails, rerun it once in a fresh round. If it fails again, stop and
-tell the user; one review is not enough.
+If a seat fails, rerun it once in a fresh round (one that is out of usage
+goes to its fallback instead). If it fails again, stop and tell the user; one
+review is not enough.
 
 When both seats are decided, run `cleanup-round.sh` on `REVIEW_DIR`. Keep
 `OUT_DIR` until you have answered the findings.

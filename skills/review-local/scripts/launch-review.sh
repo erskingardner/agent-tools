@@ -18,6 +18,11 @@
 #   refuses MCP tools that write.
 # - Codex without --ignore-user-config loaded MCP servers from
 #   ~/.codex/config.toml, which run outside its read-only sandbox.
+# - OpenCode (checked 2026-11-17, 2.2.1 under numes): ~/.config/opencode holds
+#   the user's MCP servers, custom tools and plugins, so OPENCODE_CONFIG_DIR
+#   replaces it with a round-local one whose only agent denies every tool but
+#   read, grep and glob. --standalone keeps the run off the background
+#   service, which loads the user's config instead.
 set -euo pipefail
 
 if [[ $# -ne 3 ]]; then
@@ -76,8 +81,48 @@ case "$seat" in
       "$(cat "$input/prompt.md")" > "$out_dir/cursor.md" 2> "$out_dir/cursor.log" || rc=$?
     ;;
 
+  opencode)
+    # Free Numes models, in order: each later one runs only when the one
+    # before it exits nonzero or ends without a VERDICT line (usage limits).
+    config_dir="$review_dir/opencode-config"
+    mkdir -p "$config_dir"
+    cat > "$config_dir/opencode.json" <<EOF
+{
+  "agents": {
+    "review": {
+      "description": "Read-only reviewer",
+      "mode": "primary",
+      "permissions": [
+        {"action": "*", "resource": "*", "effect": "deny"},
+        {"action": "read", "resource": "*", "effect": "allow"},
+        {"action": "grep", "resource": "*", "effect": "allow"},
+        {"action": "glob", "resource": "*", "effect": "allow"},
+        {"action": "external_directory", "resource": "$input/*", "effect": "allow"}
+      ]
+    }
+  }
+}
+EOF
+    : > "$out_dir/opencode.log"
+    for model in moonshotai/kimi-k3.1-pro:free z-ai/glm-5.3-flash:free \
+      deepseek/deepseek-v4.1-flash:free nvidia/nemotron-3-ultra-550b-a55b:free; do
+      echo "=== $model" >> "$out_dir/opencode.log"
+      rc=0
+      (cd "$checkout" && OPENCODE_CONFIG_DIR="$config_dir" OPENCODE_DISABLE_PROJECT_CONFIG=1 \
+        OPENCODE_DISABLE_CLAUDE_CODE=1 numes run opencode run --standalone --agent review \
+        -m "numes/$model#high" "$(cat "$input/prompt.md")") \
+        > "$out_dir/opencode.md" 2>> "$out_dir/opencode.log" || rc=$?
+      if [[ $rc -eq 0 ]] && grep -v '^[[:space:]]*$' "$out_dir/opencode.md" | tail -1 |
+        grep -qE '^[[:space:]]*VERDICT: (merge|changes-needed)[[:space:]]*$'; then
+        break
+      fi
+      echo "=== $model failed (exit $rc or no VERDICT line)" >> "$out_dir/opencode.log"
+    done
+    model="$model#high"
+    ;;
+
   *)
-    echo "unknown seat: $seat (want codex, claude or cursor)" >&2
+    echo "unknown seat: $seat (want codex, claude, cursor or opencode)" >&2
     exit 2
     ;;
 esac

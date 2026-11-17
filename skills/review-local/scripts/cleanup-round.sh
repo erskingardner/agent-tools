@@ -21,7 +21,7 @@ case "$review_dir" in
 esac
 
 git_dir=""
-for seat in codex claude cursor; do
+for seat in codex claude cursor opencode; do
   if [[ -d "$review_dir/$seat" ]]; then
     git_dir="$(git -C "$review_dir/$seat" rev-parse --path-format=absolute --git-common-dir)"
     git --git-dir="$git_dir" worktree remove --force "$review_dir/$seat"
