@@ -11,14 +11,17 @@ if [[ $# -ne 1 ]]; then
   exit 2
 fi
 
-review_dir=$1
-tmp_root="${TMPDIR:-/tmp}"
-tmp_root="${tmp_root%/}"
-case "$review_dir" in
-  "$tmp_root"/review-local.* | /tmp/review-local.* | /private/tmp/review-local.* | \
-    /var/folders/*/review-local.* | /private/var/folders/*/review-local.*) ;;
-  *) echo "refusing to remove $review_dir: not a review-local round" >&2; exit 2 ;;
+review_dir=${1%/}
+# Only a round directory itself: a mktemp name whose physical parent is a temp
+# root. That refuses a seat checkout and any path that leaves the temp root.
+refuse() { echo "refusing to remove $review_dir: not a review-local round" >&2; exit 2; }
+case "$(basename "$review_dir")" in review-local.??????) ;; *) refuse ;; esac
+parent="$(cd "$(dirname "$review_dir")" 2>/dev/null && pwd -P)" || refuse
+case "$parent" in
+  "$(cd "${TMPDIR:-/tmp}" && pwd -P)" | "$(cd /tmp && pwd -P)") ;;
+  *) refuse ;;
 esac
+review_dir="$parent/$(basename "$review_dir")"
 
 git_dir=""
 for seat in codex claude cursor opencode; do

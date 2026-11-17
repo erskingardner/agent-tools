@@ -59,7 +59,7 @@ done
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 guidelines=("$script_dir/../karpathy-guidelines.md" "$script_dir/../simplicity-guidelines.md")
 repo_root="$(git rev-parse --show-toplevel)"
-cd "$repo_root"
+# Name the repository from its remote: worktree directories have arbitrary names.
 repo_url="$(git remote get-url origin 2>/dev/null || echo "$repo_root")"
 repo_name="$(basename "${repo_url%/}" .git)"
 
@@ -102,6 +102,9 @@ tmp_root="${tmp_root%/}"
 # matches what the reviewers resolve, including OpenCode's allow rule.
 review_dir="$(cd "$(mktemp -d "$tmp_root/review-local.XXXXXX")" && pwd -P)"
 out_dir="$(cd "$(mktemp -d "$tmp_root/review-out.XXXXXX")" && pwd -P)"
+# A failure past this point would leave worktrees registered in the repository
+# under a path nobody was told; remove the partial round.
+trap 'bash "$script_dir/cleanup-round.sh" "$review_dir" >&2; rmdir "$out_dir"' ERR
 
 for seat in "${seats[@]}"; do
   git worktree add --quiet --detach "$review_dir/$seat" "$head_sha"

@@ -37,7 +37,9 @@ Your seat is your **host product**, not the model in this session:
 - Codex → launch `claude` and `cursor`
 - Claude → launch `cursor` and `codex`
 - Cursor → launch `claude` and `codex`
-- OpenCode, or any other builder → launch `claude` and `codex`
+- OpenCode, or any other builder → launch the two seats outside your
+  session's model family: on a GPT model `claude` and `cursor`, on a Claude
+  model `cursor` and `codex`, otherwise `claude` and `codex`
 
 If you cannot tell which host you are in, ask. Do not guess. If a seat's CLI
 is missing or not logged in, stop and tell the user. Do not improvise a
@@ -45,7 +47,8 @@ launch: the restrictions live only in `scripts/launch-review.sh`.
 
 **Fallback.** When a seat cannot run because its product is out of usage (its
 log shows a usage or rate limit, or the user tells you it is out), use
-`opencode` in its place; if you are OpenCode yourself, use `cursor`. Tell the
+`opencode` in its place. If you are OpenCode yourself, use the one seat not
+yet in the round when it is outside your model family; otherwise stop. Tell the
 user which seat you replaced and why. If the other seat already finished on
 the same `HEAD_SHA`, its verdict stands: prepare a round with the replacement
 alone (`prepare-round.sh opencode --context ...`). The `opencode` seat tries
