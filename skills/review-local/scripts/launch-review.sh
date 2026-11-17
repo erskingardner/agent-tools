@@ -47,7 +47,8 @@ rc=0
 case "$seat" in
   codex)
     model=gpt-6.1-sol
-    codex exec --ignore-user-config -s read-only -m "$model" \
+    # --ignore-user-config also drops model_reasoning_effort, leaving effort none.
+    codex exec --ignore-user-config -c model_reasoning_effort='"max"' -s read-only -m "$model" \
       -C "$checkout" -o "$out_dir/codex.md" - \
       < "$input/prompt.md" > "$out_dir/codex.log" 2>&1 || rc=$?
     ;;

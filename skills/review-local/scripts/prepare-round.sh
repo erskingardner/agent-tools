@@ -60,7 +60,8 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 guidelines=("$script_dir/../karpathy-guidelines.md" "$script_dir/../simplicity-guidelines.md")
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
-repo_name="$(basename "$repo_root")"
+repo_url="$(git remote get-url origin 2>/dev/null || echo "$repo_root")"
+repo_name="$(basename "${repo_url%/}" .git)"
 
 if [[ -n "$(git status --porcelain)" ]]; then
   echo "uncommitted or untracked files; commit (or remove) them first:" >&2
