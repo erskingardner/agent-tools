@@ -27,7 +27,7 @@ Nothing goes to GitHub. The round covers one commit on your machine.
 
 | Seat | Model |
 | --- | --- |
-| `codex` | `gpt-6.1-sol` |
+| `codex` | `gpt-6.2-sol` |
 | `claude` | `claude-opus-5-5` (not the `opus` alias) |
 | `cursor` | the newest `grok-*-high-fast` in `agent --list-models`, resolved at launch |
 | `opencode` | fallback only, through `numes run opencode`: the first of Kimi K3.1 Pro, GLM 5.3 Flash, DeepSeek V4.1 Flash, Nemotron 3 Ultra (all `:free`, `#high`) that finishes with a verdict |
