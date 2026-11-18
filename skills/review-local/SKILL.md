@@ -1,20 +1,20 @@
 ---
 name: review-local
 description: >-
-  Run two independent, read-only reviewer CLIs directly from the shell on the
-  current branch's committed diff before opening a PR, then answer their
-  findings. Use for self-review, local branch or worktree review, and the
-  review step in land-change. For a GitHub pull request, use pr-review.
+  Get two independent, read-only reviews of the current branch's committed
+  local diff from the two agent seats that are not you (Codex GPT-6.2 Sol,
+  Claude Opus 5.5, newest Cursor Grok high-fast), before any PR exists, with
+  free Numes models in OpenCode as the fallback when a seat is out of usage.
+  Then answer their findings. Nothing is posted to GitHub. Use when asked for a
+  self-review, a local review, or to have the other agents review a change,
+  branch or worktree, and from land-change. To review someone else's PR on
+  GitHub, use pr-review.
 user-invocable: true
 ---
 
+If the repository has its own `.agents/skills/review-local/` or `.claude/skills/review-local/`, stop and follow that one instead. It is the repo's specific version of this skill. If the file you are reading is already that copy, carry on.
+
 # Review a local change
-
-Run every reviewer from the current session's shell, including in T3 Code.
-Never use T3 delegation (`delegate_task`), native subagents (`spawn_agent`
-or `Agent`), or child threads to run a reviewer.
-
-If the repository has its own `.agents/skills/review-local/` or `.claude/skills/review-local/`, follow that copy's command-line procedure. If the file you are reading is already that copy, carry on.
 
 You are the author. Do not review your own change. Launch the two seats that
 are not you, collect their verdicts, and answer their findings. Reviewers
@@ -115,9 +115,8 @@ pass it as `--notes`. The base defaults to `origin/HEAD`.
 
 ## Launch
 
-Use the shell execution tool to run `launch-review.sh` once per selected seat
-in parallel. If a command returns a running shell session, wait for that
-session to finish and pass its exit code to `check-seat.sh`.
+Start both seats in parallel, each as its own background task that your host
+tracks, so you are notified when each exits and you get its exit code:
 
 ```sh
 bash /abs/path/review-local/scripts/launch-review.sh claude /abs/review-dir /abs/out-dir
