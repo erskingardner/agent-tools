@@ -157,9 +157,10 @@ Anything but `OK` is a failure, whatever the review says. Tell the user right
 away: the seat, the reason, the log excerpt and any paths it wrote. Then
 check that seat's launch flags.
 
-If a seat fails, rerun it once in a fresh round (one that is out of usage
-goes to its fallback instead). If it fails again, stop and tell the user; one
-review is not enough.
+If a seat fails, rerun it once in a freshly prepared round with the same
+`--round`, `--notes` and `--user-approved` (one that is out of usage goes to
+its fallback instead). If it fails again, stop and tell the user; one review
+is not enough.
 
 When both seats are decided, run `cleanup-round.sh` on `REVIEW_DIR`. Keep
 `OUT_DIR` until you have answered the findings.
@@ -194,11 +195,13 @@ the same head commit, but stop as soon as the next section says to.
 ## When review does not converge
 
 Three rounds without two merge verdicts usually means the design, or the
-request itself, is flawed, not that the next patch will finish the job. Stop
-patching at the first of:
+request itself, is flawed, not that the next patch will finish the job. A
+round that ends with two merge verdicts is done, and nothing here applies.
+Otherwise stop patching at the first of:
 
 - round 3 ends without two merge verdicts;
-- a round's findings share a root cause with the previous round's;
+- the round's blocker or should-fix findings share a root cause with the
+  previous round's (minor findings do not count);
 - a fix would weaken an invariant documented in an `AGENTS.md` or
   `CLAUDE.md`.
 
