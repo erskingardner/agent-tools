@@ -147,7 +147,7 @@ the problem: wide windows are slower and more likely to hit budgets.
 | --- | --- |
 | `history` | Per source (`source_ref`): sessions and seq ranges, epochs reported, last epoch report, last engine-state report. Which sources agree or disagree on their last reported epoch. A timeline. |
 | `convergence` | Convergence runs and phases, decisions with candidate branches, legacy fork resolutions, sources that confirmed the same epoch with different commits, and sources whose last state is `recovering`, `merging` or `unrecoverable`. A summary `status`. |
-| `welcome` | One chain per outer event with each step kept separate: prepared, publish attempts (policy and per-endpoint results), not started, and per recipient source: observed, unwrapped, join finished, app checkpoint. Prepared Welcomes that never got an outer event. |
+| `welcome` | One chain per outer event with each step kept separate: prepared, event size class (`event_size`), publish attempts (one per pass over the relays: `route_source` first send or retry, policy, per-endpoint results, `retained_state`), not started, `withdrawn` (the sender's terminal reason, with the oversized size class for a too-large refusal), and per recipient source: observed, unwrapped, join finished, app checkpoint. Prepared Welcomes that never got an outer event. To ask whether an invite left the sender and why not, read `prepared`, `publish_attempts`, `publish_not_started` and `withdrawn`, and the `source_ref`, `session_id` and `seq` of the records they cite in `records`. Only `withdrawn` says the sender will never send it. Prepared rows with no pass, not-started row or withdrawal are never a withdrawal: the commit may be held, or the later rows may be outside the window or never written (MDK writes no withdrawal for a Welcome that settles while nothing watches it). Rows are ordered only by `seq` within one session; rows of different sessions have no known order. |
 | `recovery` | Recovery obligations (cause, changes, reassessments, disposition), attempts linked to the group (duration, outcome, event and relay counts), totals, repeated work, epoch-gap backfills, and attempts that could not be linked. |
 | `workload` | Counts of recorded events, routes, relay outcomes, drains, cursor spills, EOSE repairs and recovery retrievals, by source and split into group-scoped and account-scoped work. Not a battery, energy or CPU measure. |
 
@@ -216,7 +216,8 @@ Work in this order:
    - `not_evaluated`: the deciding query failed, was skipped or never ran.
    - `integrity`: a property of the stored evidence (invalid line, replay,
      identity conflict).
-   - `derived_count`: counts of retrieved records.
+   - `derived_count`: counts of retrieved records, or of stored rows from a
+     query's row plan.
 4. **Answers for structure.** `answers.history.sources`,
    `answers.convergence.runs`, `answers.welcome.chains`,
    `answers.recovery.obligations` and so on.
@@ -234,6 +235,19 @@ When a budget was hit (`truncated` with `row_budget`,
 `loki_request_budget` or `deadline`, or `skipped` expansions), narrow the
 window, page through `/v1/records`, or say the answer is partial. The reader
 never drops data silently; it always reports what it could not read.
+
+**Floods.** A device that writes far more rows than the rest no longer uses
+up the row budget. The group and source-context queries count their rows
+first (`coverage.queries[].plan`): `stored_rows_by_kind`, for the group
+`stored_rows_by_source`, and `not_fetched_kinds`, the most numerous kinds
+left out so that every rarer kind fits. Such a query is `truncated` with
+`row_budget`, and a `derived_count` coverage finding names the left-out
+kinds with their counts and, for the group, the largest sources. Report the
+flood itself as a finding about the evidence, and treat conclusions from the
+left-out kinds as partial. If you need those rows, page through
+`/v1/records` with `select: source_ref` over a narrow window.
+`plan.counted: false` means counting failed (`plan.count_error`) and the
+query ran the old way: first rows first until the budget ran out.
 
 ## 5. Errors
 
@@ -271,10 +285,11 @@ property in your own report.
 - **Never pick a winner between conflicting bodies.** Records with the same
   `(source_ref, session_id, seq)` and different bodies are flagged
   `identity_conflict`; report all of them. Replays keep every occurrence.
-- **Welcome steps are separate.** Prepared, publish started and finished,
-  observed, unwrapped, join finished and app checkpoint each prove only
-  themselves. A relay acknowledgement is not recipient arrival, and a sender
-  row never shows the recipient joined.
+- **Welcome steps are separate.** Prepared, event size, publish started and
+  finished, withdrawn, observed, unwrapped, join finished and app checkpoint
+  each prove only themselves. A relay acknowledgement is not recipient
+  arrival, a sender row never shows the recipient joined, and a missing pass
+  is not a withdrawal.
 - **Fork evidence is what sources recorded.** Two sources confirming the same
   epoch with different commit refs is a disagreement signal, not proof of a
   fork.
