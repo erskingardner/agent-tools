@@ -2,8 +2,8 @@
 name: review-local
 description: >-
   Get two independent, read-only reviews of the current branch's committed
-  local diff from the two agent seats that are not you (Codex GPT-6.1 Sol,
-  Claude Opus 5.5, newest Cursor Grok high-fast), before any PR exists, with
+  local diff from the two agent seats that are not you (Codex GPT-6.2 Sol,
+  Claude Opus 5.5, newest Cursor Grok medium-fast), before any PR exists, with
   free Numes models in OpenCode as the fallback when a seat is out of usage.
   Then answer their findings. Nothing is posted to GitHub. Use when asked for a
   self-review, a local review, or to have the other agents review a change,
@@ -27,10 +27,10 @@ Nothing goes to GitHub. The round covers one commit on your machine.
 
 | Seat | Model |
 | --- | --- |
-| `codex` | `gpt-6.1-sol` |
-| `claude` | `claude-opus-5-5` (not the `opus` alias) |
-| `cursor` | the newest `grok-*-high-fast` in `agent --list-models`, resolved at launch |
-| `opencode` | fallback only, through `numes run opencode`: the first of Kimi K3.1 Pro, GLM 5.3 Flash, DeepSeek V4.1 Flash, Nemotron 3 Ultra (all `:free`, `#high`) that finishes with a verdict |
+| `codex` | `gpt-6.2-sol`, medium reasoning |
+| `claude` | `claude-opus-5-5` (not the `opus` alias), `--effort medium` |
+| `cursor` | the newest `grok-*-medium-fast` in `agent --list-models`, resolved at launch (Cursor names the reasoning level in the model id) |
+| `opencode` | fallback only, through `numes run opencode`: the first of Kimi K3.1 Pro `#medium`, GLM 5.3 Flash `#high`, DeepSeek V4.1 Flash `#high`, Nemotron 3 Ultra `#high` (all `:free`) that finishes with a verdict |
 
 Your seat is your **host product**, not the model in this session:
 
@@ -75,7 +75,7 @@ allow rules, so a launch does not stall on a prompt.
 
 | Script | Does |
 | --- | --- |
-| `prepare-round.sh <seat-a> [<seat-b>] [--context file] [--notes file] [--base ref]` | Fetches, finds the merge-base with the default branch, makes each seat's checkout and read-only input (diff, context, guidelines, prompt), and prints `REVIEW_DIR`, `OUT_DIR`, `BASE`, `HEAD_SHA` |
+| `prepare-round.sh <seat-a> [<seat-b>] --round n [--user-approved] [--context file] [--notes file] [--base ref]` | Fetches, finds the merge-base with the default branch, makes each seat's checkout and read-only input (diff, context, guidelines, prompt), and prints `REVIEW_DIR`, `OUT_DIR`, `BASE`, `HEAD_SHA`, `ROUND`. Refuses a round past 3 without `--user-approved` |
 | `launch-review.sh <seat> <review-dir> <out-dir>` | Runs one seat with its restriction flags. Review → `<out-dir>/<seat>.md`, stamped with the seat and model; log → `<out-dir>/<seat>.log` |
 | `check-seat.sh <seat> <review-dir> <out-dir> <exit-code>` | Decides one seat: exit 0, a final `VERDICT:` line, and a checkout with no writes |
 | `cleanup-round.sh <review-dir>` | Removes the round's checkouts and inputs |
@@ -92,8 +92,16 @@ or the user's request, plus any constraints they gave, and the designs you
 considered with why you chose one. Then, from the repository:
 
 ```sh
-bash /abs/path/review-local/scripts/prepare-round.sh claude codex --context /abs/context.md
+bash /abs/path/review-local/scripts/prepare-round.sh claude codex --round 1 --context /abs/context.md
 ```
+
+**Number the round.** `--round` is required. Round 1 is a change's first
+review, and each round after you answer findings adds one. A seat rerun after
+a failure, or a fallback replacing a seat, keeps the round's number. Once both
+seats have said merge on some head, the count is over: a later round (after a
+rebase, say) starts again at 1. The script refuses a round past 3 unless you
+pass `--user-approved` (see [When review does not
+converge](#when-review-does-not-converge)).
 
 The prompt tells each reviewer to read the repo's `AGENTS.md`/`CLAUDE.md`
 files, then:
@@ -106,8 +114,12 @@ files, then:
    deletions, no needless abstraction, duplication, dead code or drive-by
    changes.
 
-Each finding has a severity, `file:line`, a failure scenario or cost, and a
-fix. The review ends in `VERDICT: merge` or `VERDICT: changes-needed`.
+Each finding has a severity (blocker, should-fix or minor), `file:line`, a
+failure scenario or cost, and a fix. The review ends in `VERDICT: merge` when
+no blocker or should-fix remains, and `VERDICT: changes-needed` otherwise.
+Minor findings never block a merge. A rare edge case is minor when its effect
+is recoverable, and a should-fix when it can lose data, open a security hole
+or leave state that cannot recover.
 
 For a later round, write the previous findings and your answer to each
 (fixed in `<sha>`, or rejected and why) to a file in your scratch space, and
@@ -162,11 +174,65 @@ to take.
 - When you reject a finding, write down why, with the evidence. That goes in
   the next round's `--notes`.
 - Skip noise: informational notes and nits not worth a code change.
+- When both seats say merge, leave their minor findings out of this change.
+  Any code change would need a new round. Put the ones worth keeping in the
+  PR description or a follow-up issue.
 
 **Standalone** (the user asked for a review): do one round and one answer
 pass, then stop and report each seat's verdict, what you fixed, and what you
 rejected and why. Do not start another round unless asked.
 
 **From land-change**: repeat rounds until both seats say `VERDICT: merge` on
-the same head commit, following land-change's review step, including its rules
-for when review does not converge.
+the same head commit, but stop as soon as the next section says to.
+
+## When review does not converge
+
+Three rounds without two merge verdicts usually means the design, or the
+request itself, is flawed, not that the next patch will finish the job. Stop
+patching at the first of:
+
+- round 3 ends without two merge verdicts;
+- a round's findings share a root cause with the previous round's;
+- a fix would weaken an invariant documented in an `AGENTS.md` or
+  `CLAUDE.md`.
+
+Signs of a flawed design or request:
+
+- Flip-flopping: fixing condition A breaks B, and fixing B brings A back.
+- A growing tail: each round finds new edge cases in the same machinery, and
+  the list keeps getting longer.
+- Fixes that need special cases, flags or toggles to keep the design standing.
+- Reviewers who disagree about what the change should do, not just how.
+- A fix that works only by assuming something the system does not guarantee
+  (timing, ordering, sizes, a trusted peer).
+
+**Stopping means ending your turn with a report.** If a seat is still
+running, wait for its verdict first, but do not start fixing anything. Then
+step back. Reread the original request and its issue, and the whole branch,
+not only the last round, and ask:
+
+- Does the change still solve the problem that was asked?
+- Was that problem stated correctly?
+- Which assumption is producing the findings?
+- Is there a structurally different approach?
+- Did an existing pattern get reused under assumptions that no longer hold?
+
+Write the report as your reply to the person who asked for the change, so
+they decide with concrete context:
+
+- the request as you understood it, and anything in it that now looks wrong;
+- what you built and why;
+- the findings across all rounds, grouped by root cause rather than by round;
+- the flaw you think is behind them, with your evidence;
+- two or three ways forward (for example a different design, a narrower scope,
+  accepting a stated limitation, or reworking the request), each with its
+  cost, plus your recommendation.
+
+Then end your turn. Do not boil the report down to a multiple-choice question
+about which patch to apply. Picking a patch is not the decision the user has
+to make here. Do not open a PR or start another round until they answer.
+
+**After they decide**, their answer covers one more round, unless they say
+otherwise. Run it as the next number with `--user-approved`. If it ends
+without two merge verdicts, stop and report again, with the new findings
+added to the grouping.

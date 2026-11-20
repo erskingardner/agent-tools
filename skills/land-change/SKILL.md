@@ -132,46 +132,10 @@ Count the rounds; the report in step 6 says how many it took.
 
 ### When review does not converge
 
-Three rounds without two merge verdicts usually means the design, or the
-request itself, is flawed, not that the next patch will finish the job. Stop
-patching at the first of:
-
-- three rounds without two merge verdicts;
-- a round whose findings share a root cause with the previous round's;
-- a fix that would weaken an invariant documented in an `AGENTS.md` or
-  `CLAUDE.md`.
-
-Signs of a flawed design or request:
-
-- Flip-flopping: fixing condition A breaks B, and fixing B brings A back.
-- A growing tail: each round finds new edge cases in the same machinery, and
-  the list keeps getting longer.
-- Fixes that need special cases, flags or toggles to keep the design standing.
-- Reviewers who disagree about what the change should do, not just how.
-- A fix that works only by assuming something the system does not guarantee
-  (timing, ordering, sizes, a trusted peer).
-
-Then step back before reporting. Reread the original request and its issue,
-and the whole branch, not only the last round. Then ask:
-
-- Does the change still solve the problem that was asked?
-- Was that problem stated correctly?
-- Which assumption is producing the findings?
-- Is there a structurally different approach?
-- Did an existing pattern get reused under assumptions that no longer hold?
-
-Report to the person who asked for the change, so they decide with concrete
-context:
-
-- the request as you understood it, and anything in it that now looks wrong;
-- what you built and why;
-- the findings across all rounds, grouped by root cause rather than by round;
-- the flaw you think is behind them, with your evidence;
-- two or three ways forward (for example a different design, a narrower scope,
-  accepting a stated limitation, or reworking the request), each with its
-  cost, plus your recommendation.
-
-Do not open the PR or start another round until they decide.
+Stop at three rounds without two merge verdicts, or sooner when a round's
+findings share a root cause with the previous round's. review-local's "When
+review does not converge" says what stopping means and what to report. Follow
+it, and do not open the PR or start another round until the user decides.
 
 ## 4. Open the PR
 
