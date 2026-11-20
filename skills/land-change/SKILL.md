@@ -132,10 +132,9 @@ Count the rounds; the report in step 6 says how many it took.
 
 ### When review does not converge
 
-Stop at three rounds without two merge verdicts, or sooner when a round's
-findings share a root cause with the previous round's. review-local's "When
-review does not converge" says what stopping means and what to report. Follow
-it, and do not open the PR or start another round until the user decides.
+As soon as a round's verdicts are in, before fixing anything, apply
+review-local's "When review does not converge": when to stop, what stopping
+means, what to report, and how far the user's answer lets you go.
 
 ## 4. Open the PR
 

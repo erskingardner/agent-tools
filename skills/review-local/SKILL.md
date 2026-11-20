@@ -51,7 +51,8 @@ log shows a usage or rate limit, or the user tells you it is out), use
 yet in the round when it is outside your model family; otherwise stop. Tell the
 user which seat you replaced and why. If the other seat already finished on
 the same `HEAD_SHA`, its verdict stands: prepare a round with the replacement
-alone (`prepare-round.sh opencode --context ...`). The `opencode` seat tries
+alone, with the same `--round`, `--notes` and `--user-approved` as the round
+it replaces (`prepare-round.sh opencode --round <n> --context ...`). The `opencode` seat tries
 its models in order and moves to the next only when one exits nonzero or ends
 without a verdict; the review's first line names the model that answered, and
 `opencode.log` records each attempt.
@@ -167,6 +168,11 @@ When both seats are decided, run `cleanup-round.sh` on `REVIEW_DIR`. Keep
 
 Read `<out-dir>/<seat>.md` for both seats. Do not ask the user which findings
 to take.
+
+**Check whether to stop first.** Before you fix anything, check this round
+against [When review does not converge](#when-review-does-not-converge). If
+it says stop, do not patch or commit: check premises only as far as the
+report needs, write the report and end your turn.
 
 - Check each finding's premise before acting on it: run the test it says
   fails, build what it says does not compile, read the code it cites.
