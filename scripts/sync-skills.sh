@@ -19,6 +19,7 @@ TARGETS=(
   "codex:$HOME/.codex/skills"
   "opencode:$HOME/.config/opencode/skills"
   "pi:$HOME/.pi/agent/skills"
+  "antigravity:$HOME/.gemini/config/skills"
 )
 
 if [[ ! -d "$SKILLS_SRC" ]]; then

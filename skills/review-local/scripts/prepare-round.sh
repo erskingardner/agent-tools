@@ -5,7 +5,7 @@
 #
 # usage: prepare-round.sh <seat-a> [<seat-b>] --round n [--user-approved]
 #                         [--context file] [--notes file] [--base ref]
-#   seat       codex | claude | cursor | opencode; one seat only to replace a
+#   seat       codex | claude | antigravity | cursor | opencode; one seat only to replace a
 #              seat that could not run (see SKILL.md)
 #   --round    this round's number (SKILL.md says how to count). Rounds after
 #              the first need --notes. Rounds past the limit need
@@ -71,8 +71,8 @@ fi
 
 for seat in "${seats[@]}"; do
   case "$seat" in
-    codex | claude | cursor | opencode) ;;
-    *) echo "unknown seat: $seat (want codex, claude, cursor or opencode)" >&2; exit 2 ;;
+    codex | claude | antigravity | cursor | opencode) ;;
+    *) echo "unknown seat: $seat (want codex, claude, antigravity, cursor or opencode)" >&2; exit 2 ;;
   esac
 done
 if [[ ${#seats[@]} -eq 2 && "${seats[0]}" == "${seats[1]}" ]]; then

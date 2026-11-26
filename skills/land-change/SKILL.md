@@ -108,7 +108,9 @@ it.
 ## 3. Review locally
 
 Get two independent reviews of the whole local diff from the model families
-that are not yours, using the `review-local` skill. Its context file holds
+that are not yours, using the `review-local` skill (default seats: `codex`,
+`claude`, and `antigravity` with Gemini 4 Neon, with `cursor` as an alternative
+and `opencode` as fallback). Its context file holds
 the issue or the user's request, and the two designs from step 1 with why you
 chose one. You are the author: you do not review
 your own change, and you do not decide alone that it is good enough.

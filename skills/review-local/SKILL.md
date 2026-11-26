@@ -2,10 +2,11 @@
 name: review-local
 description: >-
   Get two independent, read-only reviews of the current branch's committed
-  local diff from the two agent seats that are not you (Codex GPT-6.2 Sol,
-  Claude Opus 5.5, newest Cursor Grok medium-fast), before any PR exists, with
-  free Numes models in OpenCode as the fallback when a seat is out of usage.
-  Then answer their findings. Nothing is posted to GitHub. Use when asked for a
+  local diff from the two default agent seats that are not you (Codex GPT-6.2
+  Sol, Claude Opus 5.5, Antigravity Gemini 4 Neon), with Cursor Grok
+  medium-fast as an alternative and free Numes models in OpenCode as the
+  fallback when seats are out of usage, before any PR exists. Then answer
+  their findings. Nothing is posted to GitHub. Use when asked for a
   self-review, a local review, or to have the other agents review a change,
   branch or worktree, and from land-change. To review someone else's PR on
   GitHub, use pr-review.
@@ -29,30 +30,36 @@ Nothing goes to GitHub. The round covers one commit on your machine.
 | --- | --- |
 | `codex` | `gpt-6.2-sol`, medium reasoning |
 | `claude` | `claude-opus-5-5` (not the `opus` alias), `--effort medium` |
-| `cursor` | the newest `grok-*-medium-fast` in `agent --list-models`, resolved at launch (Cursor names the reasoning level in the model id) |
-| `opencode` | fallback only, through `numes run opencode`: the first of Kimi K3.1 Pro `#medium`, GLM 5.3 Flash `#high`, DeepSeek V4.1 Flash `#high`, Nemotron 3 Ultra `#high` (all `:free`) that finishes with a verdict |
+| `antigravity` | `gemini-4-neon`, `--effort medium` (via `agy`) |
+| `cursor` | alternative / first fallback: the newest `grok-*-medium-fast` in `agent --list-models`, resolved at launch (Cursor names the reasoning level in the model id) |
+| `opencode` | last-resort fallback, through `numes run opencode`: the first of Kimi K3.1 Pro `#medium`, GLM 5.3 Flash `#high`, DeepSeek V4.1 Flash `#high`, Nemotron 3 Ultra `#high` (all `:free`) that finishes with a verdict |
 
 Your seat is your **host product**, not the model in this session:
 
-- Codex → launch `claude` and `cursor`
-- Claude → launch `cursor` and `codex`
+- Codex → launch `claude` and `antigravity`
+- Claude → launch `antigravity` and `codex`
+- Antigravity → launch `claude` and `codex`
 - Cursor → launch `claude` and `codex`
-- OpenCode, or any other builder → launch the two seats outside your
-  session's model family: on a GPT model `claude` and `cursor`, on a Claude
-  model `cursor` and `codex`, otherwise `claude` and `codex`
+- OpenCode, or any other builder → launch the two default seats outside your
+  session's model family: on a GPT model `claude` and `antigravity`, on a Claude
+  model `antigravity` and `codex`, on a Gemini model `claude` and `codex`,
+  otherwise `claude` and `codex`
 
 If you cannot tell which host you are in, ask. Do not guess. If a seat's CLI
 is missing or not logged in, stop and tell the user. Do not improvise a
 launch: the restrictions live only in `scripts/launch-review.sh`.
 
-**Fallback.** When a seat cannot run because its product is out of usage (its
-log shows a usage or rate limit, or the user tells you it is out), use
-`opencode` in its place. If you are OpenCode yourself, use the one seat not
-yet in the round when it is outside your model family; otherwise stop. Tell the
-user which seat you replaced and why. If the other seat already finished on
-the same `HEAD_SHA`, its verdict stands: prepare a round with the replacement
-alone, with the same `--round`, `--notes` and `--user-approved` as the round
-it replaces (`prepare-round.sh opencode --round <n> --context ...`). The `opencode` seat tries
+**Alternatives and fallback.** `cursor` is a viable alternative to any default
+seat when the user asks for it, and is the first fallback when a default seat
+cannot run because its product is out of usage (its log shows a usage or rate
+limit, or the user tells you it is out). Fall back in order, skipping your own
+host, your session's model family, and any seat already in the round: unused
+default seat (for example `antigravity` when Cursor is the host) → `cursor` →
+`opencode`. If none remains, stop. Tell the user which seat you replaced and
+why. If the other seat already finished on the same `HEAD_SHA`, its verdict
+stands: prepare a round with the replacement alone, with the same `--round`,
+`--notes` and `--user-approved` as the round it replaces (`prepare-round.sh
+cursor --round <n> --context ...`, or `opencode`). The `opencode` seat tries
 its models in order and moves to the next only when one exits nonzero or ends
 without a verdict; the review's first line names the model that answered, and
 `opencode.log` records each attempt.

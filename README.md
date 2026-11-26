@@ -1,6 +1,6 @@
 # Agent Tools
 
-Canonical agent skills for Claude, Cursor, Codex, OpenCode, and Pi.
+Canonical agent skills for Claude, Cursor, Codex, OpenCode, Pi, and Antigravity.
 
 ## Layout
 
@@ -28,6 +28,7 @@ That links each skill into:
 | Codex    | `~/.codex/skills/`            |
 | OpenCode | `~/.config/opencode/skills/`  |
 | Pi       | `~/.pi/agent/skills/`         |
+| Antigravity | `~/.gemini/config/skills/` |
 
 If Codex (or another tool) already has a real directory for a skill name — e.g. a curated plugin skill — the sync leaves it alone and only creates/updates our symlinks. Links pointing into this repo for skills that were deleted here are pruned automatically.
 
