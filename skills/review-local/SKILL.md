@@ -2,7 +2,7 @@
 name: review-local
 description: >-
   Get two independent, read-only reviews of the current branch's committed
-  local diff from the two default agent seats that are not you (Codex GPT-6.2
+  local diff from the two default agent seats that are not you (Codex GPT-6.1
   Sol, Claude Opus 5.5, Antigravity Gemini 4 Neon), with Cursor Grok
   medium-fast as an alternative and free Numes models in OpenCode as the
   fallback when seats are out of usage, before any PR exists. Then answer
@@ -28,7 +28,7 @@ Nothing goes to GitHub. The round covers one commit on your machine.
 
 | Seat | Model |
 | --- | --- |
-| `codex` | `gpt-6.2-sol`, medium reasoning |
+| `codex` | `gpt-6.1-sol`, medium reasoning |
 | `claude` | `claude-opus-5-5` (not the `opus` alias), `--effort medium` |
 | `antigravity` | `gemini-4-neon`, `--effort medium` (via `agy`) |
 | `cursor` | alternative / first fallback: the newest `grok-*-medium-fast` in `agent --list-models`, resolved at launch (Cursor names the reasoning level in the model id) |
